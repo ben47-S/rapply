@@ -1,0 +1,218 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ AUTH ============
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reminders         Reminder[]
+  notes             Note[]
+  transactions      Transaction[]
+  categories        Category[]
+  budgets           Budget[]
+  pushSubscriptions PushSubscription[]
+  scheduleEvents    ScheduleEvent[]
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ============ RAPPELS & NOTES ============
+
+enum ReminderType {
+  SUBSCRIPTION
+  PURCHASE
+  TASK
+  ONLINE_PROGRAM
+  OTHER
+}
+
+enum ReminderStatus {
+  PENDING
+  DONE
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  CUSTOM
+}
+
+model Reminder {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  type        ReminderType
+  dueDate     DateTime
+  status      ReminderStatus @default(PENDING)
+
+  isRecurring        Boolean              @default(false)
+  frequency          RecurrenceFrequency?
+  customIntervalDays Int?
+  recurrenceEndDate  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notes        Note[]
+  transactions Transaction[]
+
+  @@index([userId, dueDate])
+  @@index([userId, status])
+  @@index([userId, type])
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  reminderId String?
+  reminder   Reminder? @relation(fields: [reminderId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([reminderId])
+}
+
+// ============ FINANCES ============
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model Category {
+  id    String          @id @default(cuid())
+  name  String
+  type  TransactionType
+  color String?
+  icon  String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@unique([userId, name, type])
+}
+
+model Transaction {
+  id       String          @id @default(cuid())
+  type     TransactionType
+  amount   Decimal
+  currency String          @default("XOF")
+  date     DateTime        @default(now())
+  note     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId     String
+  categoryId String?
+  reminderId String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  reminder Reminder? @relation(fields: [reminderId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([userId, type])
+  @@index([categoryId])
+}
+
+enum BudgetType {
+  MONTHLY
+  CUSTOM
+}
+
+model Budget {
+  id          String     @id @default(cuid())
+  amount      Decimal
+  type        BudgetType @default(CUSTOM)
+  periodStart DateTime
+  periodEnd   DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId     String
+  categoryId String?
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId, periodStart, periodEnd])
+  @@index([userId, categoryId, periodStart, periodEnd])
+}
+
+// ============ EMPLOI DU TEMPS ============
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model ScheduleEvent {
+  id           String     @id @default(cuid())
+  title        String
+  description  String?
+  dayOfWeek    DayOfWeek?  // rempli si récurrent chaque semaine
+  specificDate DateTime?   // rempli si événement ponctuel pour une date précise
+  startTime    String      // format "HH:mm"
+  endTime      String?
+  color        String?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, dayOfWeek])
+  @@index([userId, specificDate])
+}
+
