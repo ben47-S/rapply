@@ -5,12 +5,14 @@ import { getUserId } from "@/app/lib/auth";
 // GET /api/schedule/:id
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const userId = getUserId(req);
 
   const event = await prisma.scheduleEvent.findFirst({
-    where: { id: params.id, userId },
+    where: { id: id, userId },
   });
 
   if (!event) {
@@ -23,20 +25,22 @@ export async function GET(
 // PUT /api/schedule/:id
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const userId = getUserId(req);
   const body = await req.json();
 
   const existing = await prisma.scheduleEvent.findFirst({
-    where: { id: params.id, userId },
+    where: { id: id, userId },
   });
   if (!existing) {
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
   const updated = await prisma.scheduleEvent.update({
-    where: { id: params.id },
+    where: { id: id },
     data: body,
   });
 
@@ -46,18 +50,20 @@ export async function PUT(
 // DELETE /api/schedule/:id
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const userId = getUserId(req);
 
   const existing = await prisma.scheduleEvent.findFirst({
-    where: { id: params.id, userId },
+    where: { id: id, userId },
   });
   if (!existing) {
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
-  await prisma.scheduleEvent.delete({ where: { id: params.id } });
+  await prisma.scheduleEvent.delete({ where: { id: id } });
 
   return NextResponse.json({ success: true });
 }

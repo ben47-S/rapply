@@ -5,12 +5,14 @@ import { getUserId } from "@/app/lib/auth";
 // GET /api/budgets/:id
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const userId = getUserId(req);
 
   const budget = await prisma.budget.findFirst({
-    where: { id: params.id, userId },
+    where: { id: id, userId },
     include: { category: true },
   });
 
@@ -24,20 +26,22 @@ export async function GET(
 // PUT /api/budgets/:id
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const userId = getUserId(req);
   const body = await req.json();
 
   const existing = await prisma.budget.findFirst({
-    where: { id: params.id, userId },
+    where: { id: id, userId },
   });
   if (!existing) {
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
   const updated = await prisma.budget.update({
-    where: { id: params.id },
+    where: { id: id },
     data: body,
   });
 
@@ -47,18 +51,20 @@ export async function PUT(
 // DELETE /api/budgets/:id
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const userId = getUserId(req);
 
   const existing = await prisma.budget.findFirst({
-    where: { id: params.id, userId },
+    where: { id: id, userId },
   });
   if (!existing) {
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
-  await prisma.budget.delete({ where: { id: params.id } });
+  await prisma.budget.delete({ where: { id: id } });
 
   return NextResponse.json({ success: true });
 }
