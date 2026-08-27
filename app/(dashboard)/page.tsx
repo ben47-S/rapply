@@ -14,7 +14,7 @@ export default async function DashboardPage() {
     <div>
       <h1 className="font-display text-2xl text-parchment mb-6">Tableau de bord</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {TICKETS.map((t) => (
           <div
             key={t.key}

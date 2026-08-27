@@ -14,7 +14,7 @@ export default async function FinancesPage() {
     <div>
       <h1 className="font-display text-2xl text-parchment mb-6">Finances</h1>
 
-      <div className="grid grid-cols-2 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
         <div className="bg-surface border border-border-log rounded-md px-4 py-5">
           <p className="text-[11px] uppercase tracking-widest text-muted mb-1">Entrées</p>
           <p className="font-mono-log text-2xl text-teal-log">
@@ -38,12 +38,12 @@ export default async function FinancesPage() {
               }`}
             />
             <div className="flex items-center justify-between bg-surface border border-border-log rounded-md px-4 py-3">
-              <div>
+              <div className="min-w-0">
                 <p className="font-mono-log text-xs text-muted mb-1">
                   {new Date(t.date).toLocaleDateString("fr-FR")}
                   {t.category ? ` · ${t.category.name}` : ""}
                 </p>
-                <p className="text-parchment">{t.note ?? "Sans description"}</p>
+                <p className="text-parchment truncate">{t.note ?? "Sans description"}</p>
               </div>
               <p className={`font-mono-log ${t.type === "INCOME" ? "text-teal-log" : "text-rust"}`}>
                 {t.type === "INCOME" ? "+" : "-"}

@@ -13,11 +13,11 @@ export default async function RemindersPage() {
           <div key={r.id} className="relative pb-6">
             <div className="absolute -left-[29px] top-1.5 w-2.5 h-2.5 rounded-full bg-brass" />
             <div className="flex items-center justify-between bg-surface border border-border-log rounded-md px-4 py-3">
-              <div>
+              <div className="min-w-0">
                 <p className="font-mono-log text-xs text-muted mb-1">
                   {new Date(r.dueDate).toLocaleDateString("fr-FR")} · {r.type}
                 </p>
-                <p className="text-parchment">{r.title}</p>
+                <p className="text-parchment truncate">{r.title}</p>
               </div>
               <StatusStamp status={r.status} />
             </div>
