@@ -68,6 +68,11 @@ enum RecurrenceFrequency {
   CUSTOM
 }
 
+enum NotifyTiming {
+  REALTIME
+  MORNING
+}
+
 model Reminder {
   id          String         @id @default(cuid())
   title       String
@@ -80,6 +85,9 @@ model Reminder {
   frequency          RecurrenceFrequency?
   customIntervalDays Int?
   recurrenceEndDate  DateTime?
+
+  notifyTiming NotifyTiming @default(REALTIME)
+  sentStages   Int          @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -173,6 +181,9 @@ model Budget {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  alertLevel Int?
+  alertSentAt DateTime?
 
   userId     String
   categoryId String?

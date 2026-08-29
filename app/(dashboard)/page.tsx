@@ -2,6 +2,7 @@ import { serverFetch } from "@/app/lib/server-fetch";
 import Link from "next/link";
 import dayjs from "@/app/lib/dayjs";
 import { SettingsIcon } from "@/app/components/IconButton";
+import { PushSubscribeButton } from "@/app/components/PushSubscribeButton";
 
 const TICKETS = [
   { key: "upcoming", label: "à venir (7j)" },
@@ -128,7 +129,10 @@ export default async function DashboardPage() {
         <SettingsIcon className="w-5 h-5" />
       </Link>
 
-      <h1 className="font-display text-2xl text-parchment mb-6">Tableau de bord</h1>
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <h1 className="font-display text-2xl text-parchment">Tableau de bord</h1>
+        <PushSubscribeButton />
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         {TICKETS.map((t) => (

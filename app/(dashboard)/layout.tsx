@@ -1,4 +1,5 @@
 import { NavLinks } from "@/app/components/NavLinks";
+import { ServiceWorkerRegistrar } from "@/app/components/ServiceWorkerRegistrar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,6 +11,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:py-6 md:pb-6">
         {children}
       </main>
+
+      <ServiceWorkerRegistrar />
 
       <nav className="fixed bottom-0 inset-x-0 z-50 flex border-t border-border-log bg-surface md:hidden">
         <NavLinks variant="bottom" />

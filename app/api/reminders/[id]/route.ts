@@ -40,9 +40,14 @@ export async function PUT(
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
+  const updateData: any = { ...body };
+  if (body.dueDate) {
+    updateData.sentStages = 0;
+  }
+
   const updated = await prisma.reminder.update({
     where: { id: id },
-    data: body,
+    data: updateData,
   });
 
   return NextResponse.json(updated);

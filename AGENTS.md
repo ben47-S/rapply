@@ -38,6 +38,10 @@ Next.js 16 (App Router) personal-management app (French UI): reminders, notes, f
 - `next-pwa` is installed but **not configured** in `next.config.ts` — do not assume PWA/offline behavior.
 - Auth cookie gotcha: in `app/api/auth/login/route.ts` the `token` cookie's `secure` flag is derived from the request protocol (`x-forwarded-proto` header), **not** from `NODE_ENV`. Behind an HTTPS proxy (e.g. ngrok) `NODE_ENV` is still `development`, so a `NODE_ENV`-based `secure` would be false and the browser drops the cookie → user stays stuck on `/login`. Keep `secure` based on `x-forwarded-proto`/`req.nextUrl.protocol`.
 
-## Known issue to fix (not a convention)
+## Push notifications (convention, not an issue)
 
-- `app/api/reminders/[id]/routes.ts` is **misnamed** — Next.js only loads `route.ts`, so the GET/PUT/DELETE handlers for single reminders are never served. Rename it to `route.ts` to enable those endpoints.
+- Two crons call protected endpoints (Bearer `$CRON_SECRET`): frequent (`*/10 * * * *` → `POST /api/push/send` for REALTIME reminders + budgets) and morning (`7 0 * * *` → `POST /api/push/digest` for MORNING reminders). Both are excluded from `proxy.ts` auth (see AGENTS note above). `web-push` VAPID keys + `CRON_SECRET` are in `.env`.
+- Reminder stages: `sentStages` (Int bitmask, bits 0/1/2) dedups the 50/80/100 % or 70/90/100 % alerts; `windowStart` + `stagesFor` live in `app/lib/recurrence.ts`. `PUT /api/reminders/[id]` resets `sentStages=0` whenever `dueDate` changes (covers subscription renewal + manual date edits).
+- Budgets alert once per period via `alertLevel` + `alertSentAt` (thresholds 80/95/100 %); reset when `alertSentAt` predates the period start.
+- `ServiceWorkerRegistrar` (in `app/(dashboard)/layout.tsx`) registers `public/sw.js`; `PushSubscribeButton` (on the dashboard) posts the subscription to `POST /api/push/subscribe` (this one stays behind `proxy.ts` so `x-user-id` is available).
+- `public/icon-192.png` / `public/icon-512.png` are placeholders generated with ImageMagick — replace with real branding.

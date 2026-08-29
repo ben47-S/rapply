@@ -210,6 +210,9 @@ function ReminderModal({
   const [recurrenceEndDate, setRecurrenceEndDate] = useState<string>(
     r?.recurrenceEndDate ? dayjs(r.recurrenceEndDate).format("YYYY-MM-DD") : ""
   );
+  const [notifyTiming, setNotifyTiming] = useState<string>(
+    r?.notifyTiming ?? "REALTIME"
+  );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -332,6 +335,7 @@ function ReminderModal({
         type,
         dueDate: new Date(due).toISOString(),
         isRecurring,
+        notifyTiming,
         ...(isRecurring
           ? {
               frequency,
@@ -448,6 +452,22 @@ function ReminderModal({
                 onChange={(e) => setDue(e.target.value)}
                 className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
               />
+            </div>
+
+            <div>
+              <label className="block text-xs text-muted mb-1">Notification</label>
+              <select
+                value={notifyTiming}
+                onChange={(e) => setNotifyTiming(e.target.value)}
+                className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+              >
+                <option value="REALTIME">À l&apos;échéance (temps réel)</option>
+                <option value="MORNING">Le matin (résumé 7h)</option>
+              </select>
+              <p className="text-[11px] text-muted mt-1">
+                Tâche ponctuelle ou cycle court → rappels auto à 50 %, 80 % et 100 %
+                de l&apos;échéance. Au-delà de 3 mois → 70 %, 90 % et 100 %.
+              </p>
             </div>
 
             <label className="flex items-center gap-2 text-sm">

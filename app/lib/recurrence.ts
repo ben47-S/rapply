@@ -31,6 +31,8 @@ export type ReminderLike = {
   recurrenceEndDate?: string | Date | null;
   isRecurring?: boolean | null;
   status?: string | null;
+  createdAt?: string | Date | null;
+  notifyTiming?: string | null;
 };
 
 export function derivedStatus(r: ReminderLike): "PENDING" | "DONE" | "OVERDUE" {
@@ -54,6 +56,42 @@ export function nextDue(base: dayjs.Dayjs, r: ReminderLike): dayjs.Dayjs {
     default:
       return base.add(1, "month");
   }
+}
+
+export function prevOccurrence(dueDate: dayjs.Dayjs, r: ReminderLike): dayjs.Dayjs {
+  switch (r.frequency ?? "MONTHLY") {
+    case "DAILY":
+      return dueDate.subtract(1, "day");
+    case "WEEKLY":
+      return dueDate.subtract(1, "week");
+    case "QUARTERLY":
+      return dueDate.subtract(3, "month");
+    case "YEARLY":
+      return dueDate.subtract(1, "year");
+    case "CUSTOM":
+      return dueDate.subtract(Number(r.customIntervalDays) || 1, "day");
+    case "MONTHLY":
+    default:
+      return dueDate.subtract(1, "month");
+  }
+}
+
+// Ancre de début de la fenêtre d'anticipation :
+// - récurrent : occurrence précédente (dueDate - intervalle)
+// - ponctuel  : création du rappel
+export function windowStart(r: ReminderLike): dayjs.Dayjs {
+  const due = dayjs(r.dueDate);
+  if (r.isRecurring || r.type === "SUBSCRIPTION") {
+    return prevOccurrence(due, r);
+  }
+  return dayjs(r.createdAt ?? r.dueDate);
+}
+
+// Seuils d'anticipation selon la durée totale de la fenêtre :
+// > 3 mois -> [70, 90, 100], sinon [50, 80, 100]
+export function stagesFor(durMs: number): number[] {
+  const THREE_MONTHS_MS = 90 * 24 * 60 * 60 * 1000;
+  return durMs > THREE_MONTHS_MS ? [70, 90, 100] : [50, 80, 100];
 }
 
 function behaviorLine(r: ReminderLike): string {
