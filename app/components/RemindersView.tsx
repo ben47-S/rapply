@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dayjs from "@/app/lib/dayjs";
 import { IconButton, PlusIcon } from "@/app/components/IconButton";
 import { StatusStamp } from "@/app/components/StatusStamp";
+import { TYPE_LABELS, FREQ_LABELS, derivedStatus, nextDue } from "@/app/lib/recurrence";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -15,46 +16,6 @@ function Spinner({ className = "" }: { className?: string }) {
 }
 
 type R = any;
-
-const TYPE_LABELS: Record<string, string> = {
-  SUBSCRIPTION: "Abonnement",
-  PURCHASE: "Achat",
-  TASK: "Tâche",
-  ONLINE_PROGRAM: "Programme en ligne",
-  OTHER: "Autre",
-};
-
-const FREQ_LABELS: Record<string, string> = {
-  DAILY: "Quotidien",
-  WEEKLY: "Hebdomadaire",
-  MONTHLY: "Mensuel",
-  QUARTERLY: "Trimestriel",
-  YEARLY: "Annuel",
-  CUSTOM: "Personnalisé",
-};
-
-function derivedStatus(r: R): "PENDING" | "DONE" | "OVERDUE" {
-  if (r.status === "DONE") return "DONE";
-  return dayjs(r.dueDate).isBefore(dayjs()) ? "OVERDUE" : "PENDING";
-}
-
-function nextDue(base: dayjs.Dayjs, r: R): dayjs.Dayjs {
-  switch (r.frequency) {
-    case "DAILY":
-      return base.add(1, "day");
-    case "WEEKLY":
-      return base.add(7, "day");
-    case "QUARTERLY":
-      return base.add(3, "month");
-    case "YEARLY":
-      return base.add(1, "year");
-    case "CUSTOM":
-      return base.add(Number(r.customIntervalDays) || 1, "day");
-    case "MONTHLY":
-    default:
-      return base.add(1, "month");
-  }
-}
 
 function dotColor(r: R): string {
   const s = derivedStatus(r);
