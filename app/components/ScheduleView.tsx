@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dayjs from "@/app/lib/dayjs";
 import { ScheduleToolbar } from "@/app/components/ScheduleToolbar";
+import { IconButton, PlusIcon } from "@/app/components/IconButton";
 import {
   dayEventsFor,
   buildSegments,
@@ -159,13 +160,14 @@ export function ScheduleView({
       <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
         <div className="flex items-center gap-5">
           <h1 className="font-display text-2xl text-parchment">Planning</h1>
-          <button
+          <IconButton
+            ariaLabel="Ajouter un événement"
             onClick={() => openNew()}
-            aria-label="Ajouter un événement"
-            className="flex h-6 w-6 items-center justify-center text-sm leading-none pb-px rounded-full border border-border-log text-parchment hover:bg-surface-raised"
+            variant="ghost"
+            className="h-6 w-6 border border-border-log"
           >
-            +
-          </button>
+            <PlusIcon className="w-3 h-3" />
+          </IconButton>
         </div>
         <ScheduleToolbar week={week} days={days} />
       </div>
@@ -427,15 +429,6 @@ function EventModal({
             {event.__new ? "Nouvel événement" : editing ? "Modifier l'événement" : title}
           </h2>
           <div className="flex items-center gap-2">
-            {!event.__new && !editing && (
-              <button
-                onClick={() => setEditing(true)}
-                aria-label="Modifier"
-                className="text-muted hover:text-parchment text-sm"
-              >
-                ✏️
-              </button>
-            )}
             <button
               onClick={onClose}
               aria-label="Fermer"

@@ -8,6 +8,10 @@ export default async function RemindersPage() {
     <div>
       <h1 className="font-display text-2xl text-parchment mb-6">Rappels</h1>
 
+      {reminders.length === 0 && (
+        <p className="text-sm text-muted">Aucun rappel pour le moment.</p>
+      )}
+
       <div className="border-l border-border-log pl-6">
         {reminders.map((r: any) => (
           <div key={r.id} className="relative pb-6">

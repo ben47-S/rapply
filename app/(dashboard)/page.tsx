@@ -1,4 +1,6 @@
 import { serverFetch } from "@/app/lib/server-fetch";
+import Link from "next/link";
+import { SettingsIcon } from "@/app/components/IconButton";
 
 const TICKETS = [
   { key: "upcoming", label: "à venir (7j)" },
@@ -12,6 +14,14 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      <Link
+        href="/parametres"
+        aria-label="Paramètres"
+        className="fixed top-3 right-3 z-50 text-muted hover:text-parchment md:hidden"
+      >
+        <SettingsIcon className="w-5 h-5" />
+      </Link>
+
       <h1 className="font-display text-2xl text-parchment mb-6">Tableau de bord</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">

@@ -28,8 +28,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-ink">
-      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-surface border border-border-log rounded-md p-6">
+    <div className="min-h-screen flex items-center justify-center bg-ink px-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-sm bg-surface border border-border-log rounded-md p-6 sm:p-8">
         <p className="font-display text-2xl text-parchment mb-6">Rapply</p>
 
         <label className="block text-xs uppercase tracking-widest text-muted mb-1">Email</label>
@@ -37,7 +37,7 @@ export default function LoginPage() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-ink border border-border-log rounded px-3 py-2 text-parchment mb-4 focus:outline-none focus:border-brass"
+          className="w-full bg-ink border border-border-log rounded px-3 py-2.5 text-parchment mb-4 focus:outline-none focus:border-brass"
         />
 
         <label className="block text-xs uppercase tracking-widest text-muted mb-1">Mot de passe</label>
@@ -45,14 +45,14 @@ export default function LoginPage() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full bg-ink border border-border-log rounded px-3 py-2 text-parchment mb-4 focus:outline-none focus:border-brass"
+          className="w-full bg-ink border border-border-log rounded px-3 py-2.5 text-parchment mb-4 focus:outline-none focus:border-brass"
         />
 
         {error && <p className="text-rust text-sm mb-4 font-mono-log">{error}</p>}
 
         <button
           type="submit"
-          className="w-full border border-brass text-brass py-2 rounded hover:bg-brass hover:text-ink transition-colors"
+          className="w-full border border-brass text-brass py-2.5 rounded hover:bg-brass hover:text-ink transition-colors"
         >
           Se connecter
         </button>

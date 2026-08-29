@@ -18,6 +18,7 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   password  String
+  currency  String   @default("XOF")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

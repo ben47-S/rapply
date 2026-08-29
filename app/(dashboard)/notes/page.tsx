@@ -16,6 +16,10 @@ export default async function NotesPage() {
         </Link>
       </div>
 
+      {notes.length === 0 && (
+        <p className="text-sm text-muted mb-4">Aucune note pour le moment.</p>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {notes.map((n: any) => (
           <div key={n.id} className="bg-surface border border-border-log rounded-md p-4">
