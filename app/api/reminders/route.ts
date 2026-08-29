@@ -9,7 +9,7 @@ const reminderSchema = z.object({
   type: z.enum(["SUBSCRIPTION", "PURCHASE", "TASK", "ONLINE_PROGRAM", "OTHER"]),
   dueDate: z.string().datetime(),
   isRecurring: z.boolean().default(false),
-  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY", "CUSTOM"]).optional(),
+  frequency: z.enum(["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY", "CUSTOM"]).optional(),
   customIntervalDays: z.number().int().positive().optional(),
   recurrenceEndDate: z.string().datetime().optional(),
 });
