@@ -102,6 +102,12 @@ export function SettingsView({
     }
   };
 
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
@@ -250,6 +256,15 @@ export function SettingsView({
             </div>
           );
         })}
+      </div>
+
+      <div className="max-w-md lg:max-w-none mt-6">
+        <button
+          onClick={logout}
+          className="px-3 py-1.5 text-xs rounded font-medium border border-rust text-rust hover:bg-rust hover:text-ink transition-colors"
+        >
+          Se déconnecter
+        </button>
       </div>
     </div>
   );
