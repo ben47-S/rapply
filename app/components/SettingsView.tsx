@@ -108,6 +108,19 @@ export function SettingsView({
     router.refresh();
   };
 
+  const revokeAllSessions = async () => {
+    if (
+      !confirm(
+        "Voulez-vous déconnecter tous vos appareils ? Vous devrez vous reconnecter."
+      )
+    ) {
+      return;
+    }
+    await fetch("/api/auth/revoke", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
@@ -275,12 +288,18 @@ export function SettingsView({
         </a>
       </div>
 
-      <div className="max-w-md lg:max-w-none mt-6">
+      <div className="max-w-md lg:max-w-none mt-6 flex flex-wrap items-center gap-3">
         <button
           onClick={logout}
-          className="px-3 py-1.5 text-xs rounded font-medium border border-rust text-rust hover:bg-rust hover:text-ink transition-colors"
+          className="px-3 py-1.5 text-xs rounded font-medium border border-border-log text-muted hover:text-parchment hover:border-parchment transition-colors cursor-pointer"
         >
           Se déconnecter
+        </button>
+        <button
+          onClick={revokeAllSessions}
+          className="px-3 py-1.5 text-xs rounded font-medium border border-rust text-rust hover:bg-rust hover:text-ink transition-colors cursor-pointer"
+        >
+          Déconnecter tous les appareils
         </button>
       </div>
     </div>

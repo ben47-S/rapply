@@ -17,9 +17,10 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String
-  currency  String   @default("XOF")
-  createdAt DateTime @default(now())
+  password     String
+  currency     String   @default("XOF")
+  tokenVersion Int      @default(0)
+  createdAt    DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   reminders         Reminder[]

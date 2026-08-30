@@ -43,9 +43,11 @@ export async function POST(req: NextRequest) {
 
   recordSuccessfulLogin(ip);
 
-  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
-    expiresIn: "30d",
-  });
+  const token = jwt.sign(
+    { userId: user.id, tokenVersion: user.tokenVersion ?? 0 },
+    process.env.JWT_SECRET!,
+    { expiresIn: "30d" }
+  );
 
   const response = NextResponse.json({ success: true });
   const isHttps =

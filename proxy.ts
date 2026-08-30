@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
+import prisma from "@/app/lib/prisma";
 
-export function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
+  // Protection CSRF pour les requêtes mutantes sur /api/*
+  if (req.nextUrl.pathname.startsWith("/api") && !isValidSameOrigin(req)) {
+    return NextResponse.json(
+      { error: "Requête cross-origin non autorisée (CSRF)" },
+      { status: 403 }
+    );
+  }
+
   const token = req.cookies.get("token")?.value;
 
   if (!token) {
@@ -9,7 +18,20 @@ export function proxy(req: NextRequest) {
   }
 
   try {
-    const payload = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+      tokenVersion?: number;
+    };
+
+    // Vérification de la révocation de session (tokenVersion)
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, tokenVersion: true },
+    });
+
+    if (!user || user.tokenVersion !== (payload.tokenVersion ?? 0)) {
+      return redirectOrReject(req);
+    }
 
     // On clone les headers et on injecte le userId dedans
     const requestHeaders = new Headers(req.headers);
@@ -25,11 +47,44 @@ export function proxy(req: NextRequest) {
   }
 }
 
-function redirectOrReject(req: NextRequest) {
-  if (req.nextUrl.pathname.startsWith("/api")) {
-    return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+function isValidSameOrigin(req: NextRequest): boolean {
+  if (!["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
+    return true;
   }
-  return NextResponse.redirect(new URL("/login", req.url));
+  const origin = req.headers.get("origin");
+  if (!origin) {
+    const referer = req.headers.get("referer");
+    if (!referer) return true;
+    try {
+      const refererUrl = new URL(referer);
+      const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+      return refererUrl.host === host;
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const originUrl = new URL(origin);
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+    return originUrl.host === host;
+  } catch {
+    return false;
+  }
+}
+
+function redirectOrReject(req: NextRequest) {
+  const isApi = req.nextUrl.pathname.startsWith("/api");
+  const response = isApi
+    ? NextResponse.json({ error: "Non authentifié" }, { status: 401 })
+    : NextResponse.redirect(new URL("/login", req.url));
+
+  response.cookies.set("token", "", {
+    httpOnly: true,
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
 }
 
 export const config = {
