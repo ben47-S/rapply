@@ -230,7 +230,7 @@ export default async function DashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-lg text-parchment">Aujourd&apos;hui</h2>
-            <Link href="/" className="text-xs text-brass hover:underline">
+            <Link href="/schedule" className="text-xs text-brass hover:underline">
               Planning
             </Link>
           </div>
@@ -285,7 +285,7 @@ export default async function DashboardPage() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-lg text-parchment">Prochains rappels</h2>
-            <Link href="/rappels" className="text-xs text-brass hover:underline">
+            <Link href="/reminders" className="text-xs text-brass hover:underline">
               Tout voir
             </Link>
           </div>

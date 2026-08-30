@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCIES, CURRENCY_LABELS } from "@/app/lib/currencies";
-import { BackButton } from "@/app/components/IconButton";
+import { BackButton, DownloadIcon } from "@/app/components/IconButton";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -256,6 +256,23 @@ export function SettingsView({
             </div>
           );
         })}
+      </div>
+
+      <div className="bg-surface border border-border-log rounded-md px-4 py-5 max-w-md lg:max-w-none mt-6">
+        <h2 className="font-display text-base text-parchment mb-1">
+          Sauvegarde & Export des données
+        </h2>
+        <p className="text-xs text-muted mb-4">
+          Téléchargez une copie complète au format JSON de toutes vos données (rappels, notes, transactions, budgets, emploi du temps).
+        </p>
+        <a
+          href="/api/export"
+          download
+          className="inline-flex items-center gap-2 px-3 py-2 text-xs rounded font-medium border border-border-log bg-ink hover:border-brass text-parchment transition-colors cursor-pointer"
+        >
+          <DownloadIcon className="w-4 h-4 text-brass" />
+          Exporter toutes les données (JSON)
+        </a>
       </div>
 
       <div className="max-w-md lg:max-w-none mt-6">
