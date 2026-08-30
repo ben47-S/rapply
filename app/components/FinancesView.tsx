@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dayjs from "@/app/lib/dayjs";
-import { IconButton, PlusIcon, BudgetIcon } from "@/app/components/IconButton";
+import { IconButton, PlusIcon, BudgetIcon, ChartIcon } from "@/app/components/IconButton";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -20,15 +20,29 @@ export function FinancesView({
   transactions: initial,
   categories: allCategories,
   defaultCurrency,
+  initialStats,
 }: {
   transactions: Tx[];
   categories: Cat[];
   defaultCurrency: string;
+  initialStats?: any;
 }) {
   const [transactions, setTransactions] = useState<Tx[]>(initial);
   const [categories, setCategories] = useState<Cat[]>(allCategories);
+  const [stats, setStats] = useState<any>(initialStats);
+  const [showStats, setShowStats] = useState(false);
   const [open, setOpen] = useState<{ tx?: Tx } | null>(null);
   const [period, setPeriod] = useState<"jour" | "mois" | "annee">("mois");
+
+  const refreshStats = async () => {
+    try {
+      const res = await fetch("/api/stats/finances");
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data);
+      }
+    } catch {}
+  };
 
   const handleCategoryAdded = (c: Cat) => setCategories((prev) => [...prev, c]);
 
@@ -54,6 +68,7 @@ export function FinancesView({
 
   const handleSaved = (updated: Tx | null, deletedId?: string) => {
     setOpen(null);
+    refreshStats();
     if (deletedId) {
       setTransactions((t) => t.filter((x) => x.id !== deletedId));
       return;
@@ -80,6 +95,14 @@ export function FinancesView({
         <h1 className="font-display text-2xl text-parchment">Finances</h1>
         <div className="flex items-center gap-2">
           <IconButton
+            ariaLabel={showStats ? "Masquer les statistiques" : "Statistiques détaillées"}
+            onClick={() => setShowStats((s) => !s)}
+            variant={showStats ? "brass" : "surface"}
+            className="h-7 w-7 sm:h-6 sm:w-6"
+          >
+            <ChartIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
+          </IconButton>
+          <IconButton
             ariaLabel="Budgets"
             href="/budgets"
             variant="surface"
@@ -97,6 +120,168 @@ export function FinancesView({
           </IconButton>
         </div>
       </div>
+
+      {showStats && stats && (
+        <div className="mb-10 space-y-6">
+          <div className="flex items-center justify-between pb-2 border-b border-border-log">
+            <h2 className="font-display text-lg text-parchment flex items-center gap-2">
+              <ChartIcon className="w-4 h-4 text-brass" />
+              Statistiques détaillées
+            </h2>
+            <button
+              onClick={() => setShowStats(false)}
+              className="text-xs text-muted hover:text-parchment transition-colors cursor-pointer"
+            >
+              Fermer ✕
+            </button>
+          </div>
+
+          {/* Grille responsive des totaux du mois : 1 col mobile, 3 cols sm+ */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-surface border border-border-log rounded-md px-4 py-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted mb-1">
+                Entrées ce mois
+              </p>
+              <p className="font-mono-log text-xl sm:text-2xl text-teal-log truncate">
+                +{Number(stats.monthIncome ?? 0).toLocaleString("fr-FR")} {defaultCurrency}
+              </p>
+            </div>
+            <div className="bg-surface border border-border-log rounded-md px-4 py-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted mb-1">
+                Dépenses ce mois
+              </p>
+              <p className="font-mono-log text-xl sm:text-2xl text-rust truncate">
+                -{Number(stats.monthExpense ?? 0).toLocaleString("fr-FR")} {defaultCurrency}
+              </p>
+            </div>
+            <div className="bg-surface border border-border-log rounded-md px-4 py-5">
+              <p className="text-[11px] uppercase tracking-widest text-muted mb-1">
+                Solde du mois
+              </p>
+              <p
+                className={`font-mono-log text-xl sm:text-2xl truncate ${
+                  (stats.balance ?? 0) >= 0 ? "text-teal-log" : "text-rust"
+                }`}
+              >
+                {(stats.balance ?? 0) >= 0 ? "+" : ""}
+                {Number(stats.balance ?? 0).toLocaleString("fr-FR")} {defaultCurrency}
+              </p>
+            </div>
+          </div>
+
+          {/* Grille responsive : Catégories + Tendance sur 6 mois */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Par catégorie */}
+            <div className="bg-surface border border-border-log rounded-md p-4">
+              <p className="text-[11px] uppercase tracking-widest text-muted mb-3">
+                Par catégorie (ce mois)
+              </p>
+              {!stats.byCategory || stats.byCategory.length === 0 ? (
+                <p className="text-xs text-muted">Aucune transaction enregistrée ce mois-ci.</p>
+              ) : (
+                <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                  {stats.byCategory.map((c: any, i: number) => (
+                    <div
+                      key={c.categoryId || `cat-${i}`}
+                      className="flex items-center justify-between text-sm py-1 border-b border-border-log/40 last:border-0"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 mr-2">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor:
+                              c.color || (c.type === "INCOME" ? "#2dd4bf" : "#f87171"),
+                          }}
+                        />
+                        <span className="text-parchment truncate text-sm">
+                          {c.categoryName}
+                        </span>
+                      </div>
+                      <span
+                        className={`font-mono-log shrink-0 text-sm ${
+                          c.type === "INCOME" ? "text-teal-log" : "text-rust"
+                        }`}
+                      >
+                        {c.type === "INCOME" ? "+" : "-"}
+                        {Number(c.total).toLocaleString("fr-FR")} {defaultCurrency}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tendance sur 6 mois */}
+            <div className="bg-surface border border-border-log rounded-md p-4">
+              <p className="text-[11px] uppercase tracking-widest text-muted mb-3">
+                Tendance (6 derniers mois)
+              </p>
+              {!stats.trend || stats.trend.length === 0 ? (
+                <p className="text-xs text-muted">Aucune donnée disponible.</p>
+              ) : (
+                <div className="space-y-3">
+                  {stats.trend.map((item: any) => {
+                    const monthLabel = dayjs(item.month).format("MMMM YYYY");
+                    const net = Number(item.income) - Number(item.expense);
+                    const maxVal = Math.max(
+                      ...stats.trend.map((t: any) =>
+                        Math.max(Number(t.income), Number(t.expense))
+                      ),
+                      1
+                    );
+                    const incPct = Math.min(100, (Number(item.income) / maxVal) * 100);
+                    const expPct = Math.min(100, (Number(item.expense) / maxVal) * 100);
+
+                    return (
+                      <div key={item.month} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-parchment capitalize font-medium">
+                            {monthLabel}
+                          </span>
+                          <span
+                            className={`font-mono-log ${
+                              net >= 0 ? "text-teal-log" : "text-rust"
+                            }`}
+                          >
+                            {net >= 0 ? "+" : ""}
+                            {net.toLocaleString("fr-FR")} {defaultCurrency}
+                          </span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted w-14 shrink-0">Entrées</span>
+                            <div className="flex-1 bg-ink h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="bg-teal-log h-full rounded-full transition-all"
+                                style={{ width: `${incPct}%` }}
+                              />
+                            </div>
+                            <span className="font-mono-log text-[10px] text-teal-log w-20 text-right shrink-0">
+                              +{Number(item.income).toLocaleString("fr-FR")}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-muted w-14 shrink-0">Dépenses</span>
+                            <div className="flex-1 bg-ink h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className="bg-rust h-full rounded-full transition-all"
+                                style={{ width: `${expPct}%` }}
+                              />
+                            </div>
+                            <span className="font-mono-log text-[10px] text-rust w-20 text-right shrink-0">
+                              -{Number(item.expense).toLocaleString("fr-FR")}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-2 mb-6">
         {([
