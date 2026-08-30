@@ -35,10 +35,46 @@ export function SettingsView({
   const [draft, setDraft] = useState({ name: "", color: "" });
   const [catSaving, setCatSaving] = useState(false);
   const [catError, setCatError] = useState("");
+
+  const [addingType, setAddingType] = useState<"EXPENSE" | "INCOME" | null>(null);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatColor, setNewCatColor] = useState("#C89B3C");
+  const [newCatSaving, setNewCatSaving] = useState(false);
+  const [newCatError, setNewCatError] = useState("");
   const alive = useRef(true);
   useEffect(() => () => {
     alive.current = false;
   }, []);
+
+  const createCategory = async (type: "EXPENSE" | "INCOME") => {
+    setNewCatError("");
+    if (!newCatName.trim()) return setNewCatError("Le nom est requis.");
+    setNewCatSaving(true);
+    try {
+      const res = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newCatName.trim(),
+          type,
+          color: newCatColor || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        return setNewCatError(
+          d?.error?.formErrors?.join(", ") || d?.error || "Erreur lors de la création."
+        );
+      }
+      const created = await res.json();
+      setCats((prev) => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+      setAddingType(null);
+      setNewCatName("");
+      setNewCatColor("#C89B3C");
+    } finally {
+      if (alive.current) setNewCatSaving(false);
+    }
+  };
 
   const startEdit = (c: any) => {
     setEditingId(c.id);
@@ -192,9 +228,70 @@ export function SettingsView({
           const group = cats.filter((c) => c.type === g.type);
           return (
             <div key={g.type} className="mb-4">
-              <p className="text-[11px] uppercase tracking-widest text-muted mb-2">
-                {g.label}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[11px] uppercase tracking-widest text-muted">
+                  {g.label}
+                </p>
+                <button
+                  onClick={() => {
+                    if (addingType === g.type) {
+                      setAddingType(null);
+                    } else {
+                      setAddingType(g.type);
+                      setNewCatName("");
+                      setNewCatColor(g.type === "EXPENSE" ? "#B24B3E" : "#4C8577");
+                      setNewCatError("");
+                    }
+                  }}
+                  className="text-xs text-brass hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  {addingType === g.type ? "✕ Fermer" : "+ Ajouter"}
+                </button>
+              </div>
+
+              {addingType === g.type && (
+                <div className="mb-3 p-3 bg-surface border border-border-log rounded space-y-2">
+                  <p className="text-xs text-parchment font-medium">
+                    Nouvelle catégorie ({g.label.toLowerCase()})
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      placeholder="Nom de la catégorie"
+                      className="flex-1 min-w-[10rem] rounded border border-border-log bg-ink px-2 py-1 text-sm outline-none focus:border-brass"
+                      autoFocus
+                    />
+                    <input
+                      type="color"
+                      value={newCatColor}
+                      onChange={(e) => setNewCatColor(e.target.value)}
+                      className="h-8 w-8 rounded border border-border-log bg-ink cursor-pointer"
+                      aria-label="Couleur"
+                    />
+                    <button
+                      onClick={() => createCategory(g.type)}
+                      disabled={newCatSaving}
+                      className="px-3 py-1 text-xs rounded font-medium bg-brass text-ink hover:opacity-90 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                    >
+                      {newCatSaving && <Spinner />}
+                      Créer
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAddingType(null);
+                        setNewCatName("");
+                        setNewCatError("");
+                      }}
+                      className="px-2 py-1 text-xs rounded border border-border-log text-muted hover:text-parchment cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                  {newCatError && <p className="text-xs text-rust">{newCatError}</p>}
+                </div>
+              )}
+
               <div className="space-y-2">
                 {group.length === 0 && (
                   <p className="text-xs text-muted">Aucune catégorie.</p>

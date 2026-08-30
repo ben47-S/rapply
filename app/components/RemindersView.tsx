@@ -550,10 +550,6 @@ function ReminderModal({
                 <option value="REALTIME">À l&apos;échéance (temps réel)</option>
                 <option value="MORNING">Le matin (résumé 7h)</option>
               </select>
-              <p className="text-[11px] text-muted mt-1">
-                Tâche ponctuelle ou cycle court → rappels auto à 50 %, 80 % et 100 %
-                de l&apos;échéance. Au-delà de 3 mois → 70 %, 90 % et 100 %.
-              </p>
             </div>
 
             <label className="flex items-center gap-2 text-sm">
