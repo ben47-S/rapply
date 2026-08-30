@@ -24,7 +24,15 @@ function dotColor(r: R): string {
   return "bg-brass";
 }
 
-export function RemindersView({ reminders: initial }: { reminders: R[] }) {
+export function RemindersView({
+  reminders: initial,
+  categories = [],
+  currency = "XOF",
+}: {
+  reminders: R[];
+  categories?: any[];
+  currency?: string;
+}) {
   const [reminders, setReminders] = useState<R[]>(initial);
   const [open, setOpen] = useState<{ r?: R; defaultType?: string } | null>(null);
   const [filter, setFilter] = useState<"tous" | "avenir" | "retard" | "faits">(
@@ -151,11 +159,27 @@ export function RemindersView({ reminders: initial }: { reminders: R[] }) {
               className={`absolute -left-[29px] top-1.5 w-2.5 h-2.5 rounded-full ${dotColor(r)}`}
             />
             <div className="flex items-center justify-between bg-surface border border-border-log rounded-md px-4 py-3 group-hover:border-brass">
-              <div className="min-w-0">
-                <p className="font-mono-log text-xs text-muted mb-1">
-                  {new Date(r.dueDate).toLocaleDateString("fr-FR")} ·{" "}
-                  {TYPE_LABELS[r.type] ?? r.type}
-                </p>
+              <div className="min-w-0 flex-1 mr-3">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <span className="font-mono-log text-xs text-muted">
+                    {new Date(r.dueDate).toLocaleDateString("fr-FR")} ·{" "}
+                    {TYPE_LABELS[r.type] ?? r.type}
+                  </span>
+                  {r.category && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-muted">
+                      <span
+                        className="w-2 h-2 rounded-full shrink-0"
+                        style={{ backgroundColor: r.category.color || "#888" }}
+                      />
+                      <span className="truncate">{r.category.name}</span>
+                    </span>
+                  )}
+                  {r.estimatedAmount != null && (
+                    <span className="font-mono-log text-xs text-brass">
+                      ~{Number(r.estimatedAmount).toLocaleString("fr-FR")} {currency}
+                    </span>
+                  )}
+                </div>
                 <p className="text-parchment truncate">{r.title}</p>
                 {r.description && (
                   <p className="text-sm text-muted truncate">{r.description}</p>
@@ -171,6 +195,8 @@ export function RemindersView({ reminders: initial }: { reminders: R[] }) {
         <ReminderModal
           r={open.r}
           defaultType={open.defaultType}
+          categories={categories}
+          currency={currency}
           onClose={() => setOpen(null)}
           onSaved={handleSaved}
         />
@@ -184,11 +210,15 @@ function ReminderModal({
   onClose,
   onSaved,
   defaultType,
+  categories = [],
+  currency = "XOF",
 }: {
   r?: R;
   onClose: () => void;
   onSaved: (updated: R | null, deletedId?: string, added?: R) => void;
   defaultType?: string;
+  categories?: any[];
+  currency?: string;
 }) {
   const isNew = !r;
   const isSub = r?.type === "SUBSCRIPTION";
@@ -202,6 +232,10 @@ function ReminderModal({
   const [due, setDue] = useState(
     r ? dayjs(r.dueDate).format("YYYY-MM-DDTHH:mm") : ""
   );
+  const [estimatedAmount, setEstimatedAmount] = useState(
+    r?.estimatedAmount != null ? String(Number(r.estimatedAmount)) : ""
+  );
+  const [categoryId, setCategoryId] = useState(r?.categoryId ?? "");
   const [isRecurring, setIsRecurring] = useState<boolean>(r?.isRecurring ?? false);
   const [frequency, setFrequency] = useState<string>(r?.frequency ?? "MONTHLY");
   const [customIntervalDays, setCustomIntervalDays] = useState<string>(
@@ -233,7 +267,10 @@ function ReminderModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ status: "PENDING" }),
         });
-        if (res.ok) onSaved({ ...r, status: "PENDING" });
+        if (res.ok) {
+          const updated = await res.json();
+          onSaved(updated);
+        }
         return;
       }
 
@@ -243,7 +280,7 @@ function ReminderModal({
         body: JSON.stringify({ status: "DONE" }),
       });
       if (!doneRes.ok) return;
-      const doneReminder = { ...r, status: "DONE" };
+      const doneReminder: R = await doneRes.json();
 
       if (r.isRecurring) {
         const nd = nextDue(dayjs(), r);
@@ -254,6 +291,8 @@ function ReminderModal({
             description: r.description || undefined,
             type: r.type,
             dueDate: nd.toISOString(),
+            estimatedAmount: r.estimatedAmount != null ? Number(r.estimatedAmount) : undefined,
+            categoryId: r.categoryId || undefined,
             isRecurring: true,
             frequency: r.frequency,
             ...(r.frequency === "CUSTOM" && r.customIntervalDays
@@ -294,7 +333,10 @@ function ReminderModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ isRecurring: false, status: "DONE" }),
         });
-        if (res.ok) onSaved({ ...r, isRecurring: false, status: "DONE" });
+        if (res.ok) {
+          const updated = await res.json();
+          onSaved(updated);
+        }
         return;
       }
       const res = await fetch(`/api/reminders/${r.id}`, {
@@ -302,7 +344,10 @@ function ReminderModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ dueDate: nd.toISOString() }),
       });
-      if (res.ok) onSaved({ ...r, dueDate: nd.toISOString() });
+      if (res.ok) {
+        const updated = await res.json();
+        onSaved(updated);
+      }
     } finally {
       if (alive.current) setSaving(false);
     }
@@ -317,7 +362,10 @@ function ReminderModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isRecurring: false, status: "DONE" }),
       });
-      if (res.ok) onSaved({ ...r, isRecurring: false, status: "DONE" });
+      if (res.ok) {
+        const updated = await res.json();
+        onSaved(updated);
+      }
     } finally {
       if (alive.current) setSaving(false);
     }
@@ -329,11 +377,14 @@ function ReminderModal({
     if (!due) return setError("La date est requise.");
     setSaving(true);
     try {
+      const amt = estimatedAmount ? parseFloat(String(estimatedAmount).replace(",", ".")) : undefined;
       const payload: any = {
         title: title.trim(),
         description: description || undefined,
         type,
         dueDate: new Date(due).toISOString(),
+        estimatedAmount: amt && !isNaN(amt) && amt > 0 ? amt : null,
+        categoryId: categoryId || null,
         isRecurring,
         notifyTiming,
         ...(isRecurring
@@ -455,6 +506,41 @@ function ReminderModal({
             </div>
 
             <div>
+              <label className="block text-xs text-muted mb-1">
+                Prix estimé ({currency}) (optionnel)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={estimatedAmount}
+                onChange={(e) => setEstimatedAmount(e.target.value)}
+                placeholder="ex: 5000"
+                className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs text-muted mb-1">
+                Catégorie (optionnel)
+              </label>
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+              >
+                <option value="">Aucune</option>
+                {categories
+                  .filter((c: any) => c.type === "EXPENSE")
+                  .map((c: any) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-xs text-muted mb-1">Notification</label>
               <select
                 value={notifyTiming}
@@ -538,6 +624,34 @@ function ReminderModal({
                 {dayjs(r?.dueDate).format("D MMMM YYYY à HH:mm")}
               </p>
             </div>
+            {r?.estimatedAmount != null && (
+              <div>
+                <p className="text-xs text-muted mb-1">Prix estimé</p>
+                <p className="font-mono-log text-sm text-brass">
+                  ~{Number(r.estimatedAmount).toLocaleString("fr-FR")} {currency}
+                </p>
+              </div>
+            )}
+            {r?.category && (
+              <div>
+                <p className="text-xs text-muted mb-1">Catégorie</p>
+                <p className="text-sm flex items-center gap-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: r.category.color || "#888" }}
+                  />
+                  <span>{r.category.name}</span>
+                </p>
+              </div>
+            )}
+            {r?.completedAt && (
+              <div>
+                <p className="text-xs text-muted mb-1">Terminé le</p>
+                <p className="text-sm text-teal-log font-mono-log">
+                  {dayjs(r.completedAt).format("D MMMM YYYY à HH:mm")}
+                </p>
+              </div>
+            )}
             {r?.description && (
               <div>
                 <p className="text-xs text-muted mb-1">Description</p>

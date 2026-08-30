@@ -80,7 +80,12 @@ model Reminder {
   description String?
   type        ReminderType
   dueDate     DateTime
+  completedAt DateTime?
   status      ReminderStatus @default(PENDING)
+
+  estimatedAmount Decimal?
+  categoryId      String?
+  category        Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   isRecurring        Boolean              @default(false)
   frequency          RecurrenceFrequency?
@@ -102,6 +107,7 @@ model Reminder {
   @@index([userId, dueDate])
   @@index([userId, status])
   @@index([userId, type])
+  @@index([categoryId])
 }
 
 model Note {
@@ -140,6 +146,7 @@ model Category {
 
   transactions Transaction[]
   budgets      Budget[]
+  reminders    Reminder[]
 
   @@unique([userId, name, type])
 }
