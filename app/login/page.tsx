@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CustomsStamp } from "@/app/components/CustomsStamp";
 
@@ -8,20 +8,13 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [stamping, setStamping] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function handleFail() {
-    if (stamping) return;
-    setStamping(true);
-    timer.current = setTimeout(() => {
-      window.location.reload();
-    }, 1500);
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (stamping) return;
+    setError("");
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -29,8 +22,20 @@ export default function LoginPage() {
       body: JSON.stringify({ email, password }),
     });
 
+    if (res.status === 429) {
+      // vraiment bloqué (5+ échecs) -> le tampon
+      setStamping(true);
+      setTimeout(() => {
+        setStamping(false);
+        setPassword("");
+      }, 2500);
+      return;
+    }
+
     if (!res.ok) {
-      handleFail();
+      // simple erreur -> message normal, pas de tampon
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Identifiants invalides");
       return;
     }
 
@@ -57,6 +62,8 @@ export default function LoginPage() {
           onChange={(e) => setPassword(e.target.value)}
           className="w-full bg-ink border border-border-log rounded px-3 py-2.5 text-parchment mb-4 focus:outline-none focus:border-brass"
         />
+
+        {error && <p className="text-rust text-sm mb-4 font-mono-log">{error}</p>}
 
         <button
           type="submit"
