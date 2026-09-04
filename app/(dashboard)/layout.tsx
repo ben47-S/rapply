@@ -1,12 +1,15 @@
 import { NavLinks } from "@/app/components/NavLinks";
+import { MobileHeader } from "@/app/components/MobileHeader";
 import { ServiceWorkerRegistrar } from "@/app/components/ServiceWorkerRegistrar";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen md:flex">
-        <aside className="hidden md:sticky md:top-0 md:self-start md:h-screen md:flex md:w-56 flex-col border-r border-border-log bg-surface px-4 py-6">
-          <NavLinks variant="sidebar" />
-        </aside>
+      <MobileHeader />
+
+      <aside className="hidden md:sticky md:top-0 md:self-start md:h-screen md:flex md:w-56 flex-col border-r border-border-log bg-surface px-4 py-6 md:z-40">
+        <NavLinks variant="sidebar" />
+      </aside>
 
       <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:py-6 md:pb-6">
         {children}

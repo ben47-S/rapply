@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { SettingsIcon } from "@/app/components/IconButton";
+import { BurgerMenu } from "@/app/components/BurgerMenu";
 
 const NAV = [
   { href: "/", label: "Accueil" },
@@ -24,15 +24,7 @@ export function NavLinks({ variant }: { variant: "sidebar" | "bottom" }) {
       <>
         <div className="flex items-center justify-between mb-8">
           <p className="font-display text-lg text-parchment">Rapply</p>
-          <Link
-            href="/parametres"
-            aria-label="Paramètres"
-            className={`hover:text-parchment transition-colors ${
-              isActive(pathname, "/parametres") ? "text-parchment" : "text-muted"
-            }`}
-          >
-            <SettingsIcon className="w-4 h-4" />
-          </Link>
+          <BurgerMenu align="left" />
         </div>
         <nav className="flex flex-col gap-1">
           {NAV.map((item) => {

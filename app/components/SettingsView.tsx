@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCIES, CURRENCY_LABELS } from "@/app/lib/currencies";
 import { BackButton, DownloadIcon } from "@/app/components/IconButton";
+import { PushSubscribeButton } from "@/app/components/PushSubscribeButton";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -383,6 +384,16 @@ export function SettingsView({
           <DownloadIcon className="w-4 h-4 text-brass" />
           Exporter toutes les données (JSON)
         </a>
+      </div>
+
+      <div className="bg-surface border border-border-log rounded-md px-4 py-5 max-w-md lg:max-w-none mt-6">
+        <h2 className="font-display text-base text-parchment mb-1">
+          Notifications
+        </h2>
+        <p className="text-xs text-muted mb-3">
+          Activez les notifications push pour recevoir des alertes rappels et budgets directement sur votre appareil.
+        </p>
+        <PushSubscribeButton />
       </div>
 
       <div className="max-w-md lg:max-w-none mt-6 flex flex-wrap items-center gap-3">

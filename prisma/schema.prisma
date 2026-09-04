@@ -15,13 +15,13 @@ datasource db {
 // ============ AUTH ============
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id           String   @id @default(cuid())
+  email        String   @unique
   password     String
   currency     String   @default("XOF")
   tokenVersion Int      @default(0)
   createdAt    DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt    DateTime @updatedAt
 
   reminders         Reminder[]
   notes             Note[]
@@ -30,6 +30,7 @@ model User {
   budgets           Budget[]
   pushSubscriptions PushSubscription[]
   scheduleEvents    ScheduleEvent[]
+  recipes           Recipe[]
 }
 
 model PushSubscription {
@@ -85,7 +86,7 @@ model Reminder {
 
   estimatedAmount Decimal?
   categoryId      String?
-  category        Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   isRecurring        Boolean              @default(false)
   frequency          RecurrenceFrequency?
@@ -122,6 +123,8 @@ model Note {
 
   reminderId String?
   reminder   Reminder? @relation(fields: [reminderId], references: [id], onDelete: SetNull)
+
+  recipe Recipe?
 
   @@index([userId])
   @@index([reminderId])
@@ -190,7 +193,7 @@ model Budget {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  alertLevel Int?
+  alertLevel  Int?
   alertSentAt DateTime?
 
   userId     String
@@ -219,9 +222,9 @@ model ScheduleEvent {
   id           String     @id @default(cuid())
   title        String
   description  String?
-  dayOfWeek    DayOfWeek?  // rempli si récurrent chaque semaine
-  specificDate DateTime?   // rempli si événement ponctuel pour une date précise
-  startTime    String      // format "HH:mm"
+  dayOfWeek    DayOfWeek? // rempli si récurrent chaque semaine
+  specificDate DateTime? // rempli si événement ponctuel pour une date précise
+  startTime    String // format "HH:mm"
   endTime      String?
   color        String?
 
@@ -237,3 +240,62 @@ model ScheduleEvent {
   @@index([userId, specificDate])
 }
 
+// ============ RECETTES ============
+
+enum RecipeDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+model Recipe {
+  id            String            @id @default(cuid())
+  title         String
+  description   String?
+  servings      Int?
+  prepTime      Int?
+  cookTime      Int?
+  difficulty    RecipeDifficulty?
+  estimatedCost Decimal?
+  photoUrl      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  noteId String? @unique
+  note   Note?   @relation(fields: [noteId], references: [id], onDelete: SetNull)
+
+  ingredients Ingredient[]
+  steps       Step[]
+
+  @@index([userId])
+  @@index([noteId])
+}
+
+model Ingredient {
+  id       String  @id @default(cuid())
+  name     String
+  quantity Float?
+  unit     String?
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+}
+
+model Step {
+  id          String @id @default(cuid())
+  order       Int
+  instruction String
+  duration    Int?
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
+  @@index([recipeId, order])
+}

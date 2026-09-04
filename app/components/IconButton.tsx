@@ -131,6 +131,20 @@ export function BackButton({ className = "" }: { className?: string }) {
   );
 }
 
+export function MoreIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+    >
+      <circle cx="12" cy="5" r="2" />
+      <circle cx="12" cy="12" r="2" />
+      <circle cx="12" cy="19" r="2" />
+    </svg>
+  );
+}
+
 export function DownloadIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg

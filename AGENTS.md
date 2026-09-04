@@ -37,6 +37,9 @@ Next.js 16 (App Router) personal-management app (French UI): reminders, notes, f
 - Push notifications use `web-push` (VAPID keys in `.env`); `app/api/push/send` is protected by `CRON_SECRET` and meant to be called by a cron job.
 - `next-pwa` is installed but **not configured** in `next.config.ts` — do not assume PWA/offline behavior.
 - Auth cookie gotcha: in `app/api/auth/login/route.ts` the `token` cookie's `secure` flag is derived from the request protocol (`x-forwarded-proto` header), **not** from `NODE_ENV`. Behind an HTTPS proxy (e.g. ngrok) `NODE_ENV` is still `development`, so a `NODE_ENV`-based `secure` would be false and the browser drops the cookie → user stays stuck on `/login`. Keep `secure` based on `x-forwarded-proto`/`req.nextUrl.protocol`.
+- API route validation: routes use **zod** schemas for request body validation (see `app/api/reminders/route.ts` for the pattern: `z.object(...)` → `safeParse(body)` → return 400 with `.flatten()` on failure).
+- Rate limiting (login): `app/lib/rate-limit.ts` is **in-memory only** — lost on server restart. 5 failed attempts per IP within 15 min triggers a 15-min block.
+- The proxy (`proxy.ts`) also enforces **CSRF** on mutating `/api/*` requests by checking `origin`/`referer` against the host, and validates **token version** for session revocation.
 
 ## Push notifications (convention, not an issue)
 
