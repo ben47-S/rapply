@@ -1,17 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CustomsStamp } from "@/app/components/CustomsStamp";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [stamping, setStamping] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function handleFail() {
+    if (stamping) return;
+    setStamping(true);
+    timer.current = setTimeout(() => {
+      window.location.reload();
+    }, 1500);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
+    if (stamping) return;
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
@@ -20,7 +30,7 @@ export default function LoginPage() {
     });
 
     if (!res.ok) {
-      setError("Identifiants invalides");
+      handleFail();
       return;
     }
 
@@ -48,15 +58,16 @@ export default function LoginPage() {
           className="w-full bg-ink border border-border-log rounded px-3 py-2.5 text-parchment mb-4 focus:outline-none focus:border-brass"
         />
 
-        {error && <p className="text-rust text-sm mb-4 font-mono-log">{error}</p>}
-
         <button
           type="submit"
-          className="w-full border border-brass text-brass py-2.5 rounded hover:bg-brass hover:text-ink transition-colors"
+          disabled={stamping}
+          className="w-full border border-brass text-brass py-2.5 rounded hover:bg-brass hover:text-ink transition-colors disabled:opacity-50"
         >
-          Se connecter
+          {stamping ? "…" : "Se connecter"}
         </button>
       </form>
+
+      {stamping && <CustomsStamp />}
     </div>
   );
 }

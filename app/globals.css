@@ -21,3 +21,25 @@ body {
   background: var(--color-ink);
   color: var(--color-parchment);
 }
+
+@keyframes stamp-impact {
+  0% {
+    transform: scale(0) rotate(-15deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) rotate(-6deg);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.95) rotate(-9deg);
+  }
+  100% {
+    transform: scale(1) rotate(-8deg);
+    opacity: 1;
+  }
+}
+
+.stamp-impact {
+  animation: stamp-impact 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
