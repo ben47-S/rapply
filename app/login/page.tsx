@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CustomsStamp } from "@/app/components/CustomsStamp";
+import { FloatingChaos } from "@/app/components/FloatingChaos";
+import { BorderTicker } from "@/app/components/BorderTicker";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -10,6 +12,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [stamping, setStamping] = useState(false);
+  const [chaosCount, setChaosCount] = useState(8);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setChaosCount(window.innerWidth < 640 ? 6 : 12);
+    }
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,7 +32,7 @@ export default function LoginPage() {
     });
 
     if (res.status === 429) {
-      // vraiment bloqué (5+ échecs) -> le tampon
+      // vraiment bloqué (5+ échecs) -> le tampon + le chaos
       setStamping(true);
       setTimeout(() => {
         setStamping(false);
@@ -74,7 +83,14 @@ export default function LoginPage() {
         </button>
       </form>
 
-      {stamping && <CustomsStamp />}
+      {stamping && (
+        <>
+          <div className="fixed inset-0 alarm-vignette pointer-events-none z-30" />
+          <CustomsStamp />
+          <BorderTicker />
+          <FloatingChaos count={chaosCount} />
+        </>
+      )}
     </div>
   );
 }

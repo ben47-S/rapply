@@ -43,3 +43,52 @@ body {
 .stamp-impact {
   animation: stamp-impact 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
+
+@keyframes float-drift {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(var(--drift-x), var(--drift-y)) rotate(var(--drift-rot));
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(var(--drift-x) * 1.6), calc(var(--drift-y) * 1.6)) rotate(calc(var(--drift-rot) * 1.5));
+    opacity: 0;
+  }
+}
+
+.float-chaos-item {
+  animation: float-drift var(--drift-duration, 4s) ease-in-out forwards;
+  position: fixed;
+  pointer-events: none;
+}
+
+@keyframes alarm-flicker {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.alarm-vignette {
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(178, 75, 62, 0.25) 100%);
+  animation: alarm-flicker 0.6s steps(2, end) infinite;
+}
+
+@keyframes ticker {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
