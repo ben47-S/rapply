@@ -5,13 +5,6 @@ import { useRouter } from "next/navigation";
 import { CustomsStamp } from "@/app/components/CustomsStamp";
 import { BorderTicker } from "@/app/components/BorderTicker";
 
-function randomVW(min: number, max: number) {
-  return `${Math.random() * (max - min) + min}vw`;
-}
-function randomVH(min: number, max: number) {
-  return `${Math.random() * (max - min) + min}vh`;
-}
-
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -22,7 +15,6 @@ export default function LoginPage() {
 
   const emailWrapRef = useRef<HTMLDivElement>(null);
   const passwordWrapRef = useRef<HTMLDivElement>(null);
-  const wanderInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stamping = blockedUntil !== null && now < blockedUntil;
   const secondsLeft = blockedUntil ? Math.max(0, Math.ceil((blockedUntil - now) / 1000)) : 0;
@@ -34,33 +26,55 @@ export default function LoginPage() {
     return () => clearInterval(tick);
   }, [blockedUntil]);
 
-  // Fait errer les VRAIS champs tant que stamping est actif
+  // Fait tourner les VRAIS champs en cercle continu tant que stamping est actif
   useEffect(() => {
-    function wander() {
+    if (!stamping) {
       [emailWrapRef.current, passwordWrapRef.current].forEach((el) => {
         if (!el) return;
-        el.style.top = randomVH(10, 80);
-        el.style.left = randomVW(10, 70);
-        el.style.transform = `rotate(${Math.random() * 16 - 8}deg)`;
-      });
-    }
-
-    if (stamping) {
-      wander();
-      wanderInterval.current = setInterval(wander, 900);
-    } else {
-      if (wanderInterval.current) clearInterval(wanderInterval.current);
-      [emailWrapRef.current, passwordWrapRef.current].forEach((el) => {
-        if (!el) return;
-        el.style.top = "";
         el.style.left = "";
+        el.style.top = "";
         el.style.transform = "";
       });
+      return;
     }
 
-    return () => {
-      if (wanderInterval.current) clearInterval(wanderInterval.current);
-    };
+    let raf: number;
+    const startTime = performance.now();
+    const REVOLUTION_MS = 26000;
+
+    const centerX = 50;
+    const centerY = 48;
+    const radiusX = 28;
+    const radiusY = 22;
+
+    function animate(t: number) {
+      const elapsed = t - startTime;
+      const baseAngle = (elapsed / REVOLUTION_MS) * Math.PI * 2;
+
+      [
+        { el: emailWrapRef.current, phase: 0, speedFactor: 1 },
+        { el: passwordWrapRef.current, phase: Math.PI, speedFactor: 1.08 },
+      ].forEach(({ el, phase, speedFactor }) => {
+        if (!el) return;
+        const angle = baseAngle * speedFactor + phase;
+
+        const wobbleX = Math.sin(elapsed / 3900 + phase) * 3;
+        const wobbleY = Math.cos(elapsed / 4600 + phase) * 2.5;
+
+        const x = centerX + Math.cos(angle) * radiusX + wobbleX;
+        const y = centerY + Math.sin(angle) * radiusY + wobbleY;
+        const rotate = Math.sin(angle) * 6;
+
+        el.style.left = `${x}vw`;
+        el.style.top = `${y}vh`;
+        el.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
+      });
+
+      raf = requestAnimationFrame(animate);
+    }
+
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
   }, [stamping]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -100,7 +114,7 @@ export default function LoginPage() {
 
         <div
           ref={emailWrapRef}
-          className={stamping ? "fixed z-40 transition-all duration-[700ms] ease-in-out w-[260px]" : ""}
+          className={stamping ? "fixed z-40 w-[260px] will-change-transform" : ""}
         >
           <label className="block text-xs uppercase tracking-widest text-muted mb-1">Email</label>
           <input
@@ -114,7 +128,7 @@ export default function LoginPage() {
 
         <div
           ref={passwordWrapRef}
-          className={stamping ? "fixed z-40 transition-all duration-[700ms] ease-in-out w-[260px]" : ""}
+          className={stamping ? "fixed z-40 w-[260px] will-change-transform" : ""}
         >
           <label className="block text-xs uppercase tracking-widest text-muted mb-1">Mot de passe</label>
           <input
