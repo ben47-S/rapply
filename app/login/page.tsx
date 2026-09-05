@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [blockedUntil, setBlockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [mounted, setMounted] = useState(false);
 
   const emailWrapRef = useRef<HTMLDivElement>(null);
   const passwordWrapRef = useRef<HTMLDivElement>(null);
@@ -28,6 +29,9 @@ export default function LoginPage() {
     const tick = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(tick);
   }, [blockedUntil]);
+
+  // Force le premier rendu à toujours afficher "" (serveur + client identiques)
+  useEffect(() => setMounted(true), []);
 
   // Fait tout bouger (champs, titre, message, bouton) tant que stamping est actif
   useEffect(() => {
@@ -126,7 +130,7 @@ export default function LoginPage() {
 
         <div
           ref={emailWrapRef}
-          className="w-[260px]"
+          className={mounted && stamping ? "fixed z-40 w-[260px] will-change-transform" : ""}
         >
           <label className="block text-xs uppercase tracking-widest text-muted mb-1">Email</label>
           <input
@@ -140,7 +144,7 @@ export default function LoginPage() {
 
         <div
           ref={passwordWrapRef}
-          className="w-[260px]"
+          className={mounted && stamping ? "fixed z-40 w-[260px] will-change-transform" : ""}
         >
           <label className="block text-xs uppercase tracking-widest text-muted mb-1">Mot de passe</label>
           <input
