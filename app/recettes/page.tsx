@@ -3,7 +3,10 @@ import { RecipesView } from "@/app/components/RecipesView";
 import { BackButton } from "@/app/components/IconButton";
 
 export default async function RecettesPage() {
-  const recipes = await serverFetch("/api/recipes").catch(() => []);
+  const [recipes, { currency }] = await Promise.all([
+    serverFetch("/api/recipes").catch(() => []),
+    serverFetch("/api/user").catch(() => ({ currency: "XOF" })),
+  ]);
 
   return (
     <div className="px-2 sm:px-4">
@@ -11,7 +14,7 @@ export default async function RecettesPage() {
         <BackButton />
         <h1 className="font-display text-2xl text-parchment">Recettes</h1>
       </div>
-      <RecipesView initial={recipes} />
+      <RecipesView initial={recipes} currency={currency} />
     </div>
   );
 }

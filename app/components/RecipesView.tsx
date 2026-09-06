@@ -70,7 +70,13 @@ function formatCost(r: R): string {
   return Number(r.estimatedCost).toLocaleString("fr-FR");
 }
 
-export function RecipesView({ initial }: { initial: R[] }) {
+export function RecipesView({
+  initial,
+  currency,
+}: {
+  initial: R[];
+  currency: string;
+}) {
   const [recipes, setRecipes] = useState<R[]>(initial);
   const [open, setOpen] = useState<{ r?: R } | null>(null);
   const [query, setQuery] = useState("");
@@ -161,7 +167,7 @@ export function RecipesView({ initial }: { initial: R[] }) {
                   {r.servings != null && <span>{r.servings} parts</span>}
                   {r.estimatedCost != null && (
                     <span className="font-mono-log text-brass">
-                      ~{Number(r.estimatedCost).toLocaleString("fr-FR")}
+                      ~{Number(r.estimatedCost).toLocaleString("fr-FR")} {currency}
                     </span>
                   )}
                 </div>
@@ -179,6 +185,7 @@ export function RecipesView({ initial }: { initial: R[] }) {
       {open && (
         <RecipeModal
           r={open.r}
+          currency={currency}
           onClose={() => setOpen(null)}
           onSaved={handleSaved}
         />
@@ -189,10 +196,12 @@ export function RecipesView({ initial }: { initial: R[] }) {
 
 function RecipeModal({
   r,
+  currency,
   onClose,
   onSaved,
 }: {
   r?: R;
+  currency: string;
   onClose: () => void;
   onSaved: (updated: R | null, deletedId?: string) => void;
 }) {
@@ -446,7 +455,7 @@ function RecipeModal({
                   <span className="uppercase tracking-wider text-[10px] text-brass">
                     Coût
                   </span>
-                  <span className="text-brass">~{formatCost(r)}</span>
+                  <span className="text-brass">~{formatCost(r)} {currency}</span>
                 </span>
               )}
             </div>

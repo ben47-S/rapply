@@ -10,6 +10,10 @@ export const metadata = {
     statusBarStyle: "black-translucent",
     title: "Rapply",
   },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
+  },
 };
 
 export const viewport = {
