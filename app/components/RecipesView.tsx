@@ -51,6 +51,21 @@ const onlyDecimal = (v: string) => {
     : cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
 };
 
+const isModKey = (e: React.KeyboardEvent) =>
+  e.ctrlKey || e.metaKey || e.altKey;
+
+const blockNonDigitKey = (e: React.KeyboardEvent) => {
+  if (e.key.length === 1 && !/[\d]/.test(e.key) && !isModKey(e)) {
+    e.preventDefault();
+  }
+};
+
+const blockNonDecimalKey = (e: React.KeyboardEvent) => {
+  if (e.key.length === 1 && !/[\d.]/.test(e.key) && !isModKey(e)) {
+    e.preventDefault();
+  }
+};
+
 function formatCost(r: R): string {
   return Number(r.estimatedCost).toLocaleString("fr-FR");
 }
@@ -363,7 +378,7 @@ function RecipeModal({
   const canSave = title.trim().length > 0;
 
   const inputCls =
-    "w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass";
+    "rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass";
 
   return (
     <div
@@ -550,7 +565,7 @@ function RecipeModal({
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className={inputCls}
+                className={`${inputCls} w-full`}
               />
             </div>
 
@@ -562,7 +577,7 @@ function RecipeModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className={inputCls}
+              className={`${inputCls} w-full`}
             />
           </div>
 
@@ -575,8 +590,9 @@ function RecipeModal({
                 value={servings}
                 inputMode="numeric"
                 placeholder="ex. 4"
+                onKeyDown={blockNonDigitKey}
                 onChange={(e) => setServings(onlyDigits(e.target.value))}
-                className={inputCls}
+                className={`${inputCls} w-full`}
               />
             </div>
             <div>
@@ -586,7 +602,7 @@ function RecipeModal({
               <select
                 value={difficulty}
                 onChange={(e) => setDifficulty(e.target.value)}
-                className={inputCls}
+                className={`${inputCls} w-full`}
               >
                 <option value="">—</option>
                 <option value="EASY">Facile</option>
@@ -602,8 +618,9 @@ function RecipeModal({
                 value={prepTime}
                 inputMode="numeric"
                 placeholder="ex. 15"
+                onKeyDown={blockNonDigitKey}
                 onChange={(e) => setPrepTime(onlyDigits(e.target.value))}
-                className={inputCls}
+                className={`${inputCls} w-full`}
               />
             </div>
             <div>
@@ -614,8 +631,9 @@ function RecipeModal({
                 value={cookTime}
                 inputMode="numeric"
                 placeholder="ex. 25"
+                onKeyDown={blockNonDigitKey}
                 onChange={(e) => setCookTime(onlyDigits(e.target.value))}
-                className={inputCls}
+                className={`${inputCls} w-full`}
               />
             </div>
             <div>
@@ -626,8 +644,9 @@ function RecipeModal({
                 value={estimatedCost}
                 inputMode="decimal"
                 placeholder="ex. 4500"
+                onKeyDown={blockNonDecimalKey}
                 onChange={(e) => setEstimatedCost(onlyDecimal(e.target.value))}
-                className={inputCls}
+                className={`${inputCls} w-full`}
               />
             </div>
           </div>
@@ -649,45 +668,50 @@ function RecipeModal({
                 </p>
               )}
               {ingredients.map((ig, idx) => (
-                <div key={idx} className="flex gap-2 items-center w-full">
-                  <input
-                    value={ig.name}
-                    onChange={(e) =>
-                      updateIngredient(idx, { name: e.target.value })
-                    }
-                    placeholder="Nom"
-                    className={`${inputCls} flex-1 min-w-0`}
-                  />
-                  <input
-                    value={ig.quantity ?? ""}
-                    inputMode="decimal"
-                    placeholder="Qté"
-                    onChange={(e) =>
-                      updateIngredient(idx, { quantity: onlyDecimal(e.target.value) })
-                    }
-                    className={`${inputCls} w-16 shrink-0`}
-                  />
-                  <select
-                    value={ig.unit ?? ""}
-                    onChange={(e) =>
-                      updateIngredient(idx, { unit: e.target.value })
-                    }
-                    className={`${inputCls} w-24 shrink-0`}
-                  >
-                    <option value="">—</option>
-                    {UNITS.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    onClick={() => removeIngredient(idx)}
-                    aria-label="Supprimer l'ingrédient"
-                    className="text-rust hover:underline text-sm shrink-0"
-                  >
-                    ✕
-                  </button>
+                <div key={idx} className="border border-border-log rounded p-2 space-y-2">
+                  <div className="flex gap-2 items-center">
+                    <input
+                      value={ig.name}
+                      onChange={(e) =>
+                        updateIngredient(idx, { name: e.target.value })
+                      }
+                      placeholder="Nom de l'ingrédient"
+                      className={`${inputCls} flex-1 min-w-0`}
+                    />
+                    <button
+                      onClick={() => removeIngredient(idx)}
+                      aria-label="Supprimer l'ingrédient"
+                      className="text-rust hover:underline text-sm shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      value={ig.quantity ?? ""}
+                      inputMode="decimal"
+                      placeholder="Qté"
+                      onKeyDown={blockNonDecimalKey}
+                      onChange={(e) =>
+                        updateIngredient(idx, { quantity: onlyDecimal(e.target.value) })
+                      }
+                      className={`${inputCls} w-24 shrink-0`}
+                    />
+                    <select
+                      value={ig.unit ?? ""}
+                      onChange={(e) =>
+                        updateIngredient(idx, { unit: e.target.value })
+                      }
+                      className={`${inputCls} flex-1 min-w-0`}
+                    >
+                      <option value="">—</option>
+                      {UNITS.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               ))}
             </div>
@@ -710,35 +734,40 @@ function RecipeModal({
                 </p>
               )}
               {steps.map((s, idx) => (
-                <div key={idx} className="flex gap-2 items-start w-full">
-                  <span className="font-mono-log text-sm text-brass mt-1.5 shrink-0 w-5">
-                    {idx + 1}.
-                  </span>
-                  <textarea
-                    value={s.instruction}
-                    onChange={(e) =>
-                      updateStep(idx, { instruction: e.target.value })
-                    }
-                    rows={2}
-                    placeholder="Description de l'étape"
-                    className={`${inputCls} flex-1 min-w-0`}
-                  />
-                  <input
-                    value={s.duration ?? ""}
-                    inputMode="numeric"
-                    placeholder="min"
-                    onChange={(e) =>
-                      updateStep(idx, { duration: onlyDigits(e.target.value) })
-                    }
-                    className={`${inputCls} w-16 shrink-0`}
-                  />
-                  <button
-                    onClick={() => removeStep(idx)}
-                    aria-label="Supprimer l'étape"
-                    className="text-rust hover:underline text-sm shrink-0 mt-1"
-                  >
-                    ✕
-                  </button>
+                <div key={idx} className="border border-border-log rounded p-2 space-y-2">
+                  <div className="flex gap-2 items-start">
+                    <span className="font-mono-log text-sm text-brass mt-1.5 shrink-0 w-5">
+                      {idx + 1}.
+                    </span>
+                    <textarea
+                      value={s.instruction}
+                      onChange={(e) =>
+                        updateStep(idx, { instruction: e.target.value })
+                      }
+                      rows={2}
+                      placeholder="Description de l'étape"
+                      className={`${inputCls} flex-1 min-w-0`}
+                    />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <input
+                      value={s.duration ?? ""}
+                      inputMode="numeric"
+                      placeholder="min"
+                      onKeyDown={blockNonDigitKey}
+                      onChange={(e) =>
+                        updateStep(idx, { duration: onlyDigits(e.target.value) })
+                      }
+                      className={`${inputCls} w-20 shrink-0`}
+                    />
+                    <button
+                      onClick={() => removeStep(idx)}
+                      aria-label="Supprimer l'étape"
+                      className="text-rust hover:underline text-sm shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
