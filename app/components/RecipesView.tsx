@@ -473,6 +473,22 @@ function RecipeModal({
               </div>
             )}
 
+            {r.accessories?.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-widest text-muted mb-2">
+                  Accessoires
+                </p>
+                <ul className="space-y-1">
+                  {r.accessories.map((a: any) => (
+                    <li key={a.id} className="text-sm flex gap-2">
+                      <span className="text-brass">•</span>
+                      <span>{a.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             {r.steps?.length > 0 && (
               <div>
                 <p className="text-xs uppercase tracking-widest text-muted mb-2">
@@ -497,22 +513,6 @@ function RecipeModal({
                       </li>
                     ))}
                 </ol>
-              </div>
-            )}
-
-{r.accessories?.length > 0 && (
-              <div>
-                <p className="text-xs uppercase tracking-widest text-muted mb-2">
-                  Accessoires
-                </p>
-                <ul className="space-y-1">
-                  {r.accessories.map((a: any) => (
-                    <li key={a.id} className="text-sm flex gap-2">
-                      <span className="text-brass">•</span>
-                      <span>{a.name}</span>
-                    </li>
-                  ))}
-                </ul>
               </div>
             )}
 
