@@ -17,6 +17,11 @@ const stepSchema = z.object({
   duration: z.number().int().nonnegative().optional().nullable(),
 });
 
+const accessorySchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+});
+
 const recipeSchema = z.object({
   title: z.string().min(1).optional(),
   description: z.string().optional().nullable(),
@@ -29,6 +34,7 @@ const recipeSchema = z.object({
   noteId: z.string().optional().nullable(),
   ingredients: z.array(ingredientSchema).optional(),
   steps: z.array(stepSchema).optional(),
+  accessories: z.array(accessorySchema).optional(),
 });
 
 // GET /api/recipes/:id
@@ -42,7 +48,7 @@ export async function GET(
 
   const recipe = await prisma.recipe.findFirst({
     where: { id: id, userId },
-    include: { ingredients: true, steps: true },
+    include: { ingredients: true, steps: true, accessories: true },
   });
 
   if (!recipe) {
@@ -74,7 +80,7 @@ export async function PUT(
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { ingredients, steps, noteId, ...rest } = parsed.data;
+  const { ingredients, steps, accessories, noteId, ...rest } = parsed.data;
 
   if (noteId) {
     const note = await prisma.note.findFirst({
@@ -124,6 +130,8 @@ export async function PUT(
           await tx.ingredient.create({
             data: { recipeId: id, name: ing.name, quantity: ing.quantity ?? null, unit: ing.unit ?? null },
           });
+        } else {
+          console.warn(`Ingrédient ${ing.id} ignoré — n'appartient pas à la recette ${id}`);
         }
       }
     }
@@ -151,13 +159,44 @@ export async function PUT(
           await tx.step.create({
             data: { recipeId: id, order: s.order, instruction: s.instruction, duration: s.duration ?? null },
           });
+        } else {
+          console.warn(`Étape ${s.id} ignorée — n'appartient pas à la recette ${id}`);
+        }
+      }
+    }
+
+    if (accessories) {
+      const existingAccs = await tx.accessory.findMany({
+        where: { recipeId: id },
+        select: { id: true },
+      });
+      const ownedAccIds = new Set(existingAccs.map((a) => a.id));
+
+      const keptIds = accessories
+        .map((a) => a.id)
+        .filter((x): x is string => !!x && ownedAccIds.has(x));
+      await tx.accessory.deleteMany({
+        where: { recipeId: id, NOT: { id: { in: keptIds } } },
+      });
+      for (const acc of accessories) {
+        if (acc.id && ownedAccIds.has(acc.id)) {
+          await tx.accessory.update({
+            where: { id: acc.id },
+            data: { name: acc.name },
+          });
+        } else if (!acc.id) {
+          await tx.accessory.create({
+            data: { recipeId: id, name: acc.name },
+          });
+        } else {
+          console.warn(`Accessoire ${acc.id} ignoré — n'appartient pas à la recette ${id}`);
         }
       }
     }
 
     return tx.recipe.findUnique({
       where: { id: id },
-      include: { ingredients: true, steps: true },
+      include: { ingredients: true, steps: true, accessories: true },
     });
   });
 

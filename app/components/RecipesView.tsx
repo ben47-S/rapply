@@ -22,6 +22,35 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   HARD: "Difficile",
 };
 
+const UNITS = [
+  "g",
+  "kg",
+  "mg",
+  "ml",
+  "cl",
+  "l",
+  "cuillère à café",
+  "cuillère à soupe",
+  "pièce",
+  "demi",
+  "quart",
+  "tranche",
+  "pincée",
+  "verre",
+  "tasse",
+  "boîte",
+];
+
+const onlyDigits = (v: string) => v.replace(/[^\d]/g, "");
+
+const onlyDecimal = (v: string) => {
+  const cleaned = v.replace(/[^\d.]/g, "");
+  const firstDot = cleaned.indexOf(".");
+  return firstDot === -1
+    ? cleaned
+    : cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
+};
+
 function formatCost(r: R): string {
   return Number(r.estimatedCost).toLocaleString("fr-FR");
 }
@@ -98,10 +127,10 @@ export function RecipesView({ initial }: { initial: R[] }) {
                 <p className="text-parchment font-medium mb-1 truncate">
                   {r.title}
                 </p>
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mt-2">
                   {r.difficulty && (
                     <span
-                      className={`font-mono-log border px-1.5 py-0.5 inline-block ${
+                      className={`border-b px-1 py-0.5 ${
                         r.difficulty === "HARD"
                           ? "text-rust border-rust"
                           : r.difficulty === "MEDIUM"
@@ -113,22 +142,40 @@ export function RecipesView({ initial }: { initial: R[] }) {
                     </span>
                   )}
                   {r.prepTime != null && (
-                    <span className="font-mono-log">
-                      {r.prepTime} min
-                      {r.cookTime != null ? ` + ${r.cookTime} min` : ""}
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-muted">
+                        Prép
+                      </span>
+                      <span className="text-parchment">{r.prepTime} min</span>
+                    </span>
+                  )}
+                  {r.cookTime != null && (
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-muted">
+                        Cuisson
+                      </span>
+                      <span className="text-parchment">{r.cookTime} min</span>
                     </span>
                   )}
                   {r.servings != null && (
-                    <span className="font-mono-log">{r.servings} parts</span>
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-muted">
+                        Portions
+                      </span>
+                      <span className="text-parchment">{r.servings}</span>
+                    </span>
                   )}
                   {r.estimatedCost != null && (
-                    <span className="font-mono-log text-brass">
-                      ~{formatCost(r)}
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-brass">
+                        Coût
+                      </span>
+                      <span className="text-brass">~{formatCost(r)}</span>
                     </span>
                   )}
                 </div>
                 {r.description && (
-                  <p className="text-sm text-muted line-clamp-2 mt-2">
+                  <p className="text-sm text-muted mt-2">
                     {r.description}
                   </p>
                 )}
@@ -175,17 +222,25 @@ function RecipeModal({
   const [steps, setSteps] = useState<Step[]>(
     r?.steps?.map((s: Step) => ({ ...s })) ?? []
   );
+  const [accessories, setAccessories] = useState<any[]>(
+    r?.accessories?.map((a: any) => ({ ...a })) ?? []
+  );
 
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [shoppingSaving, setShoppingSaving] = useState(false);
+  const [shoppingCreated, setShoppingCreated] = useState(false);
   const alive = useRef(true);
-  useEffect(() => () => {
-    alive.current = false;
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
   }, []);
 
-  const editing = true;
+  const [mode, setMode] = useState<"view" | "edit">(isNew ? "edit" : "view");
+  const editing = mode === "edit";
 
   const addIngredient = () =>
     setIngredients((l) => [...l, { name: "", quantity: "", unit: "" }]);
@@ -207,6 +262,12 @@ function RecipeModal({
         .map((s, i) => ({ ...s, order: i }))
     );
 
+  const addAccessory = () => setAccessories((l) => [...l, { name: "" }]);
+  const updateAccessory = (idx: number, name: string) =>
+    setAccessories((l) => l.map((a, i) => (i === idx ? { ...a, name } : a)));
+  const removeAccessory = (idx: number) =>
+    setAccessories((l) => l.filter((_, i) => i !== idx));
+
   const submit = async () => {
     setError("");
     if (!title.trim()) return setError("Le titre est requis.");
@@ -214,6 +275,8 @@ function RecipeModal({
       return setError("Chaque ingrédient doit avoir un nom.");
     if (steps.some((s) => !s.instruction.trim()))
       return setError("Chaque étape doit avoir un texte.");
+    if (accessories.some((a) => !a.name.trim()))
+      return setError("Chaque accessoire doit avoir un nom.");
     setSaving(true);
     try {
       const payload: any = {
@@ -236,6 +299,10 @@ function RecipeModal({
           instruction: s.instruction.trim(),
           duration:
             s.duration === "" || s.duration == null ? null : Number(s.duration),
+        })),
+        accessories: accessories.map((a) => ({
+          id: a.id || undefined,
+          name: a.name.trim(),
         })),
       };
       const res = isNew
@@ -287,7 +354,7 @@ function RecipeModal({
         const data = await res.json().catch(() => ({}));
         return setError(data?.error || "Erreur lors de la création.");
       }
-      setError("Rappel de liste de courses créé ✓");
+      setShoppingCreated(true);
     } finally {
       if (alive.current) setShoppingSaving(false);
     }
@@ -309,7 +376,7 @@ function RecipeModal({
       >
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg">
-            {isNew ? "Nouvelle recette" : "Modifier la recette"}
+            {isNew ? "Nouvelle recette" : editing ? "Modifier la recette" : r.title}
           </h2>
           <button
             onClick={onClose}
@@ -320,15 +387,172 @@ function RecipeModal({
           </button>
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs text-muted mb-1">Titre *</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className={inputCls}
-            />
+        {!editing ? (
+          // ---------- MODE PRÉSENTATION (lecture seule) ----------
+          <div className="space-y-4">
+            {r.photoUrl && (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={r.photoUrl} alt="" className="w-full h-40 object-cover rounded" />
+            )}
+
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+              {r.difficulty && (
+                <span
+                  className={`border-b px-1 py-0.5 ${
+                    r.difficulty === "HARD"
+                      ? "text-rust border-rust"
+                      : r.difficulty === "MEDIUM"
+                      ? "text-amber border-amber"
+                      : "text-teal-log border-teal-log"
+                  }`}
+                >
+                  {DIFFICULTY_LABELS[r.difficulty]}
+                </span>
+              )}
+              {r.prepTime != null && (
+                <span className="inline-flex items-baseline gap-1">
+                  <span className="uppercase tracking-wider text-[10px] text-muted">
+                    Prép
+                  </span>
+                  <span className="text-parchment">{r.prepTime} min</span>
+                </span>
+              )}
+              {r.cookTime != null && (
+                <span className="inline-flex items-baseline gap-1">
+                  <span className="uppercase tracking-wider text-[10px] text-muted">
+                    Cuisson
+                  </span>
+                  <span className="text-parchment">{r.cookTime} min</span>
+                </span>
+              )}
+              {r.servings != null && (
+                <span className="inline-flex items-baseline gap-1">
+                  <span className="uppercase tracking-wider text-[10px] text-muted">
+                    Portions
+                  </span>
+                  <span className="text-parchment">{r.servings}</span>
+                </span>
+              )}
+              {r.estimatedCost != null && (
+                <span className="inline-flex items-baseline gap-1">
+                  <span className="uppercase tracking-wider text-[10px] text-brass">
+                    Coût
+                  </span>
+                  <span className="text-brass">~{formatCost(r)}</span>
+                </span>
+              )}
+            </div>
+
+            {r.description && <p className="text-sm text-muted">{r.description}</p>}
+
+            {r.ingredients?.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-widest text-muted mb-2">
+                  Ingrédients
+                </p>
+                <ul className="space-y-1">
+                  {r.ingredients.map((ig: Ing) => (
+                    <li key={ig.id} className="text-sm flex gap-2">
+                      <span className="text-brass">•</span>
+                      <span>
+                        {ig.quantity ? `${ig.quantity} ` : ""}
+                        {ig.unit ? `${ig.unit} ` : ""}
+                        {ig.name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {r.steps?.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-widest text-muted mb-2">
+                  Étapes
+                </p>
+                <ol className="space-y-2">
+                  {[...r.steps]
+                    .sort((a: Step, b: Step) => a.order - b.order)
+                    .map((s: Step, i: number) => (
+                      <li key={s.id} className="text-sm flex gap-2">
+                        <span className="font-mono-log text-brass shrink-0">
+                          {i + 1}.
+                        </span>
+                        <span>
+                          {s.instruction}
+                          {s.duration ? (
+                            <span className="text-muted"> ({s.duration} min)</span>
+                          ) : (
+                            ""
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                </ol>
+              </div>
+            )}
+
+{r.accessories?.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-widest text-muted mb-2">
+                  Accessoires
+                </p>
+                <ul className="space-y-1">
+                  {r.accessories.map((a: any) => (
+                    <li key={a.id} className="text-sm flex gap-2">
+                      <span className="text-brass">•</span>
+                      <span>{a.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {error && <p className="text-xs text-rust">{error}</p>}
+
+            <div className="flex items-center justify-between pt-2">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={remove}
+                  disabled={deleting}
+                  className="text-xs text-rust hover:underline disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {deleting && <Spinner />} Supprimer
+                </button>
+                {shoppingCreated ? (
+                  <span className="text-xs text-teal-log flex items-center gap-1.5">
+                    ✓ Liste de courses créée
+                  </span>
+                ) : (
+                  <button
+                    onClick={makeShoppingList}
+                    disabled={shoppingSaving}
+                    className="text-xs text-brass border border-brass px-2 py-1 rounded hover:bg-brass hover:text-ink disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {shoppingSaving && <Spinner />} Liste de courses
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setMode("edit")}
+                className="px-3 py-1.5 text-xs rounded font-medium bg-brass text-ink hover:opacity-90"
+              >
+                Modifier
+              </button>
+            </div>
           </div>
+        ) : (
+          // ---------- MODE ÉDITION (formulaire) ----------
+          <>
+            <div className="space-y-3">
+            <div>
+              <label className="block text-xs text-muted mb-1">Titre *</label>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className={inputCls}
+              />
+            </div>
 
           <div>
             <label className="block text-xs text-muted mb-1">
@@ -348,10 +572,10 @@ function RecipeModal({
                 Portions (optionnel)
               </label>
               <input
-                type="number"
-                min="1"
                 value={servings}
-                onChange={(e) => setServings(e.target.value)}
+                inputMode="numeric"
+                placeholder="ex. 4"
+                onChange={(e) => setServings(onlyDigits(e.target.value))}
                 className={inputCls}
               />
             </div>
@@ -375,10 +599,10 @@ function RecipeModal({
                 Temps prép (min, optionnel)
               </label>
               <input
-                type="number"
-                min="0"
                 value={prepTime}
-                onChange={(e) => setPrepTime(e.target.value)}
+                inputMode="numeric"
+                placeholder="ex. 15"
+                onChange={(e) => setPrepTime(onlyDigits(e.target.value))}
                 className={inputCls}
               />
             </div>
@@ -387,10 +611,10 @@ function RecipeModal({
                 Temps cuisson (min, optionnel)
               </label>
               <input
-                type="number"
-                min="0"
                 value={cookTime}
-                onChange={(e) => setCookTime(e.target.value)}
+                inputMode="numeric"
+                placeholder="ex. 25"
+                onChange={(e) => setCookTime(onlyDigits(e.target.value))}
                 className={inputCls}
               />
             </div>
@@ -399,11 +623,10 @@ function RecipeModal({
                 Coût estimé (optionnel)
               </label>
               <input
-                type="number"
-                min="0"
-                step="any"
                 value={estimatedCost}
-                onChange={(e) => setEstimatedCost(e.target.value)}
+                inputMode="decimal"
+                placeholder="ex. 4500"
+                onChange={(e) => setEstimatedCost(onlyDecimal(e.target.value))}
                 className={inputCls}
               />
             </div>
@@ -426,31 +649,38 @@ function RecipeModal({
                 </p>
               )}
               {ingredients.map((ig, idx) => (
-                <div key={idx} className="flex gap-2 items-center">
+                <div key={idx} className="flex gap-2 items-center w-full">
                   <input
                     value={ig.name}
                     onChange={(e) =>
                       updateIngredient(idx, { name: e.target.value })
                     }
                     placeholder="Nom"
-                    className={`${inputCls} flex-[2] min-w-0`}
+                    className={`${inputCls} flex-1 min-w-0`}
                   />
                   <input
                     value={ig.quantity ?? ""}
-                    onChange={(e) =>
-                      updateIngredient(idx, { quantity: e.target.value })
-                    }
+                    inputMode="decimal"
                     placeholder="Qté"
-                    className={`${inputCls} w-16`}
+                    onChange={(e) =>
+                      updateIngredient(idx, { quantity: onlyDecimal(e.target.value) })
+                    }
+                    className={`${inputCls} w-16 shrink-0`}
                   />
-                  <input
+                  <select
                     value={ig.unit ?? ""}
                     onChange={(e) =>
                       updateIngredient(idx, { unit: e.target.value })
                     }
-                    placeholder="Unité"
-                    className={`${inputCls} w-20`}
-                  />
+                    className={`${inputCls} w-24 shrink-0`}
+                  >
+                    <option value="">—</option>
+                    {UNITS.map((u) => (
+                      <option key={u} value={u}>
+                        {u}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => removeIngredient(idx)}
                     aria-label="Supprimer l'ingrédient"
@@ -480,7 +710,7 @@ function RecipeModal({
                 </p>
               )}
               {steps.map((s, idx) => (
-                <div key={idx} className="flex gap-2 items-start">
+                <div key={idx} className="flex gap-2 items-start w-full">
                   <span className="font-mono-log text-sm text-brass mt-1.5 shrink-0 w-5">
                     {idx + 1}.
                   </span>
@@ -495,11 +725,12 @@ function RecipeModal({
                   />
                   <input
                     value={s.duration ?? ""}
-                    onChange={(e) =>
-                      updateStep(idx, { duration: e.target.value })
-                    }
+                    inputMode="numeric"
                     placeholder="min"
-                    className={`${inputCls} w-16`}
+                    onChange={(e) =>
+                      updateStep(idx, { duration: onlyDigits(e.target.value) })
+                    }
+                    className={`${inputCls} w-16 shrink-0`}
                   />
                   <button
                     onClick={() => removeStep(idx)}
@@ -513,54 +744,84 @@ function RecipeModal({
             </div>
           </div>
 
-          {error && <p className="text-xs text-rust">{error}</p>}
-        </div>
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs text-muted">
+                Accessoires (optionnel)
+              </label>
+              <button
+                onClick={addAccessory}
+                className="text-xs text-brass hover:underline flex items-center gap-1"
+              >
+                + Ajouter
+              </button>
+            </div>
+            <div className="space-y-2">
+              {accessories.length === 0 && (
+                <p className="text-xs text-muted">
+                  Aucun accessoire (casserole, four…).
+                </p>
+              )}
+              {accessories.map((a, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <input
+                    value={a.name}
+                    onChange={(e) => updateAccessory(idx, e.target.value)}
+                    placeholder="Nom de l'accessoire"
+                    className={`${inputCls} flex-1 min-w-0`}
+                  />
+                  <button
+                    onClick={() => removeAccessory(idx)}
+                    aria-label="Supprimer l'accessoire"
+                    className="text-rust hover:underline text-sm shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
 
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-3">
-            {!isNew && (
-              <button
-                onClick={remove}
-                disabled={deleting}
-                className="text-xs text-rust hover:underline disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {deleting && <Spinner />}
-                Supprimer
-              </button>
-            )}
-            {!isNew && (
-              <button
-                onClick={makeShoppingList}
-                disabled={shoppingSaving}
-                className="text-xs text-brass border border-brass px-2 py-1 rounded hover:bg-brass hover:text-ink disabled:opacity-50 flex items-center gap-1.5"
-              >
-                {shoppingSaving && <Spinner />}
-                Liste de courses
-              </button>
-            )}
+          {error && <p className="text-xs text-rust">{error}</p>}
           </div>
-          <div className="flex gap-2 ml-auto">
-            <button
-              onClick={onClose}
-              disabled={saving || deleting}
-              className="px-3 py-1.5 text-xs rounded border border-border-log text-muted hover:text-parchment disabled:opacity-50"
-            >
-              {editing ? "Fermer" : "Annuler"}
-            </button>
-            <button
-              onClick={submit}
-              disabled={!canSave || saving || deleting}
-              className={`px-3 py-1.5 text-xs rounded font-medium flex items-center gap-1.5 ${
-                canSave && !saving && !deleting
-                  ? "bg-brass text-ink hover:opacity-90 cursor-pointer"
-                  : "bg-surface-raised text-muted cursor-not-allowed"
-              }`}
-            >
-              {saving && <Spinner />}
-              {isNew ? "Créer" : "Enregistrer"}
-            </button>
+
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-3">
+              {!isNew && (
+                <button
+                  onClick={remove}
+                  disabled={deleting}
+                  className="text-xs text-rust hover:underline disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {deleting && <Spinner />}
+                  Supprimer
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2 ml-auto">
+              <button
+                onClick={() => (isNew ? onClose() : setMode("view"))}
+                disabled={saving || deleting}
+                className="px-3 py-1.5 text-xs rounded border border-border-log text-muted hover:text-parchment disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={submit}
+                disabled={!canSave || saving || deleting}
+                className={`px-3 py-1.5 text-xs rounded font-medium flex items-center gap-1.5 ${
+                  canSave && !saving && !deleting
+                    ? "bg-brass text-ink hover:opacity-90 cursor-pointer"
+                    : "bg-surface-raised text-muted cursor-not-allowed"
+                }`}
+              >
+                {saving && <Spinner />}
+                {isNew ? "Créer" : "Enregistrer"}
+              </button>
+            </div>
           </div>
-        </div>
+            </>
+        )}
       </div>
     </div>
   );

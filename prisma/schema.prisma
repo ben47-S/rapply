@@ -270,6 +270,7 @@ model Recipe {
 
   ingredients Ingredient[]
   steps       Step[]
+  accessories Accessory[]
 
   @@index([userId])
   @@index([noteId])
@@ -298,4 +299,14 @@ model Step {
 
   @@index([recipeId])
   @@index([recipeId, order])
+}
+
+model Accessory {
+  id   String @id @default(cuid())
+  name String
+
+  recipeId String
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@index([recipeId])
 }

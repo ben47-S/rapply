@@ -31,6 +31,13 @@ const recipeSchema = z.object({
       })
     )
     .optional(),
+  accessories: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+      })
+    )
+    .optional(),
 });
 
 // GET /api/recipes
@@ -39,7 +46,7 @@ export async function GET(req: NextRequest) {
 
   const recipes = await prisma.recipe.findMany({
     where: { userId },
-    include: { ingredients: true, steps: true },
+    include: { ingredients: true, steps: true, accessories: true },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -56,7 +63,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { ingredients, steps, noteId, ...rest } = parsed.data;
+  const { ingredients, steps, accessories, noteId, ...rest } = parsed.data;
 
   if (noteId) {
     const note = await prisma.note.findFirst({
@@ -82,9 +89,12 @@ export async function POST(req: NextRequest) {
         ? { create: ingredients }
         : undefined,
       steps: steps?.length ? { create: steps } : undefined,
+      accessories: accessories?.length
+        ? { create: accessories }
+        : undefined,
       userId,
     },
-    include: { ingredients: true, steps: true },
+    include: { ingredients: true, steps: true, accessories: true },
   });
 
   return NextResponse.json(recipe, { status: 201 });
