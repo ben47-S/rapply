@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
+import dayjs from "@/app/lib/dayjs";
 
 // POST /api/recipes/:id/shopping-list
 // Génère un rappel PURCHASE (liste de courses) à partir d'une recette.
@@ -26,7 +27,7 @@ export async function POST(
       title: `Liste de courses : ${recipe.title}`,
       description: recipe.title,
       type: "PURCHASE",
-      dueDate: new Date(),
+      dueDate: dayjs().endOf("day").toDate(),
       estimatedAmount: recipe.estimatedCost ?? undefined,
       isRecurring: false,
       userId,
