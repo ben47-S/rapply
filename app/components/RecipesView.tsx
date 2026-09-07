@@ -148,10 +148,10 @@ export function RecipesView({
                 <p className="text-parchment font-medium mb-1 truncate">
                   {r.title}
                 </p>
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted mt-2">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mt-2">
                   {r.difficulty && (
                     <span
-                      className={`font-mono-log border rounded px-1.5 py-0.5 ${
+                      className={`border-b px-1 py-0.5 ${
                         r.difficulty === "HARD"
                           ? "text-rust border-rust"
                           : r.difficulty === "MEDIUM"
@@ -162,12 +162,36 @@ export function RecipesView({
                       {DIFFICULTY_LABELS[r.difficulty]}
                     </span>
                   )}
-                  {r.prepTime != null && <span>{r.prepTime} min prép</span>}
-                  {r.cookTime != null && <span>{r.cookTime} min cuisson</span>}
-                  {r.servings != null && <span>{r.servings} parts</span>}
+                  {r.prepTime != null && (
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-muted">
+                        Prép
+                      </span>
+                      <span className="text-parchment">{r.prepTime} min</span>
+                    </span>
+                  )}
+                  {r.cookTime != null && (
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-muted">
+                        Cuisson
+                      </span>
+                      <span className="text-parchment">{r.cookTime} min</span>
+                    </span>
+                  )}
+                  {r.servings != null && (
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-muted">
+                        Portions
+                      </span>
+                      <span className="text-parchment">{r.servings}</span>
+                    </span>
+                  )}
                   {r.estimatedCost != null && (
-                    <span className="font-mono-log text-brass">
-                      ~{Number(r.estimatedCost).toLocaleString("fr-FR")} {currency}
+                    <span className="inline-flex items-baseline gap-1">
+                      <span className="uppercase tracking-wider text-[10px] text-brass">
+                        Coût
+                      </span>
+                      <span className="text-brass">~{formatCost(r)} {currency}</span>
                     </span>
                   )}
                 </div>
@@ -217,13 +241,13 @@ function RecipeModal({
   );
 
   const [ingredients, setIngredients] = useState<Ing[]>(
-    r?.ingredients?.map((i: Ing) => ({ _key: crypto.randomUUID(), ...i })) ?? []
+    r?.ingredients?.map((i: Ing) => ({ ...i })) ?? []
   );
   const [steps, setSteps] = useState<Step[]>(
-    r?.steps?.map((s: Step) => ({ _key: crypto.randomUUID(), ...s })) ?? []
+    r?.steps?.map((s: Step) => ({ ...s })) ?? []
   );
   const [accessories, setAccessories] = useState<any[]>(
-    r?.accessories?.map((a: any) => ({ _key: crypto.randomUUID(), ...a })) ?? []
+    r?.accessories?.map((a: any) => ({ ...a })) ?? []
   );
 
   const [error, setError] = useState("");
@@ -232,10 +256,6 @@ function RecipeModal({
   const [shoppingSaving, setShoppingSaving] = useState(false);
   const [shoppingCreated, setShoppingCreated] = useState(false);
   const alive = useRef(true);
-
-  const newIngredientRef = useRef<HTMLInputElement>(null);
-  const newStepRef = useRef<HTMLTextAreaElement>(null);
-  const newAccessoryRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -246,13 +266,8 @@ function RecipeModal({
   const [mode, setMode] = useState<"view" | "edit">(isNew ? "edit" : "view");
   const editing = mode === "edit";
 
-  const addIngredient = () => {
-    setIngredients((l) => [
-      { _key: crypto.randomUUID(), name: "", quantity: "", unit: "" },
-      ...l,
-    ]);
-    setTimeout(() => newIngredientRef.current?.focus(), 0);
-  };
+  const addIngredient = () =>
+    setIngredients((l) => [...l, { name: "", quantity: "", unit: "" }]);
   const updateIngredient = (idx: number, patch: Partial<Ing>) =>
     setIngredients((l) =>
       l.map((ig, i) => (i === idx ? { ...ig, ...patch } : ig))
@@ -260,13 +275,8 @@ function RecipeModal({
   const removeIngredient = (idx: number) =>
     setIngredients((l) => l.filter((_, i) => i !== idx));
 
-  const addStep = () => {
-    setSteps((l) => [
-      { _key: crypto.randomUUID(), instruction: "", duration: "" },
-      ...l,
-    ]);
-    setTimeout(() => newStepRef.current?.focus(), 0);
-  };
+  const addStep = () =>
+    setSteps((l) => [...l, { order: l.length, instruction: "", duration: "" }]);
   const updateStep = (idx: number, patch: Partial<Step>) =>
     setSteps((l) => l.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
   const removeStep = (idx: number) =>
@@ -276,10 +286,7 @@ function RecipeModal({
         .map((s, i) => ({ ...s, order: i }))
     );
 
-  const addAccessory = () => {
-    setAccessories((l) => [{ _key: crypto.randomUUID(), name: "" }, ...l]);
-    setTimeout(() => newAccessoryRef.current?.focus(), 0);
-  };
+  const addAccessory = () => setAccessories((l) => [...l, { name: "" }]);
   const updateAccessory = (idx: number, name: string) =>
     setAccessories((l) => l.map((a, i) => (i === idx ? { ...a, name } : a)));
   const removeAccessory = (idx: number) =>
@@ -310,9 +317,9 @@ function RecipeModal({
           quantity: ig.quantity === "" || ig.quantity == null ? null : Number(ig.quantity),
           unit: ig.unit?.trim() || null,
         })),
-        steps: steps.map((s, idx) => ({
+        steps: steps.map((s) => ({
           id: s.id || undefined,
-          order: s.order ?? idx,
+          order: s.order,
           instruction: s.instruction.trim(),
           duration:
             s.duration === "" || s.duration == null ? null : Number(s.duration),
@@ -670,10 +677,9 @@ function RecipeModal({
                 </p>
               )}
               {ingredients.map((ig, idx) => (
-                <div key={ig._key} className="border border-border-log rounded p-2 space-y-2">
+                <div key={idx} className="border border-border-log rounded p-2 space-y-2">
                   <div className="flex gap-2 items-center">
                     <input
-                      ref={idx === 0 ? newIngredientRef : undefined}
                       value={ig.name}
                       onChange={(e) =>
                         updateIngredient(idx, { name: e.target.value })
@@ -739,9 +745,8 @@ function RecipeModal({
                 </p>
               )}
               {accessories.map((a, idx) => (
-                <div key={a._key} className="flex gap-2 items-center">
+                <div key={idx} className="flex gap-2 items-center">
                   <input
-                    ref={idx === 0 ? newAccessoryRef : undefined}
                     value={a.name}
                     onChange={(e) => updateAccessory(idx, e.target.value)}
                     placeholder="Nom de l'accessoire"
@@ -776,13 +781,12 @@ function RecipeModal({
                 </p>
               )}
               {steps.map((s, idx) => (
-                <div key={s._key} className="border border-border-log rounded p-2 space-y-2">
+                <div key={idx} className="border border-border-log rounded p-2 space-y-2">
                   <div className="flex gap-2 items-start">
                     <span className="font-mono-log text-sm text-brass mt-1.5 shrink-0 w-5">
                       {idx + 1}.
                     </span>
                     <textarea
-                      ref={idx === 0 ? newStepRef : undefined}
                       value={s.instruction}
                       onChange={(e) =>
                         updateStep(idx, { instruction: e.target.value })

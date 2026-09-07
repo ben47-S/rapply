@@ -39,7 +39,7 @@ const toMin = (t: string) => {
   return (h || 0) * 60 + (m || 0);
 };
 
-function hasOverlap(
+function findOverlaps(
   cand: {
     mode: "recurrent" | "ponctuel";
     dayOfWeek?: string;
@@ -49,13 +49,14 @@ function hasOverlap(
   },
   existing: any[],
   excludeId?: string
-): boolean {
+): any[] {
   const cStart = toMin(cand.startTime);
   const cEnd = cand.endTime ? toMin(cand.endTime) : cStart + 60;
   const cIsRec = cand.mode === "recurrent";
   const cDow = cand.dayOfWeek;
   const cDate = cand.specificDate;
 
+  const found: any[] = [];
   for (const e of existing) {
     if (excludeId && e.id === excludeId) continue;
     const eStart = toMin(e.startTime);
@@ -74,9 +75,9 @@ function hasOverlap(
         DOW_ENUM.indexOf(e.dayOfWeek as any) + 1 === dayjs(cDate).isoWeekday();
     }
     if (!sameDay) continue;
-    if (cStart < eEnd && eStart < cEnd) return true;
+    if (cStart < eEnd && eStart < cEnd) found.push(e);
   }
-  return false;
+  return found;
 }
 
 function readableText(hex?: string): string {
@@ -350,13 +351,21 @@ function EventModal({
     if (mode === "ponctuel" && !specificDate)
       return setError("Choisissez une date.");
 
-    const overlap = hasOverlap(
+    const overlaps = findOverlaps(
       { mode, dayOfWeek, specificDate, startTime, endTime },
       events,
       event.__new ? undefined : event.id
     );
-    if (overlap) {
-      return setError("Ce créneau chevauche un événement existant.");
+    if (overlaps.length > 0) {
+      const parts = overlaps.map((c: any) => {
+        const t = `${c.startTime}${c.endTime ? `–${c.endTime}` : ""}`;
+        return c.title ? `${c.title} (${t})` : t;
+      });
+      return setError(
+        `Ce créneau chevauche ${
+          overlaps.length > 1 ? "des événements existants" : "un événement existant"
+        } : ${parts.join(", ")}.`
+      );
     }
 
     const payload: any = {
