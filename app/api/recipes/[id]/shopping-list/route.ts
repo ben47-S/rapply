@@ -17,15 +17,31 @@ export async function POST(
 
   const recipe = await prisma.recipe.findFirst({
     where: { id: id, userId },
+    include: { ingredients: true },
   });
   if (!recipe) {
     return NextResponse.json({ error: "Recette introuvable" }, { status: 404 });
   }
 
+  const description =
+    recipe.ingredients.length > 0
+      ? recipe.ingredients
+          .map((i) => {
+            const qty =
+              i.quantity != null
+                ? Number(i.quantity).toLocaleString("fr-FR")
+                : null;
+            const unit = i.unit?.trim() || null;
+            const parts = [qty, unit, i.name.trim()].filter(Boolean).join(" ");
+            return `- ${parts}`;
+          })
+          .join("\n")
+      : null;
+
   const reminder = await prisma.reminder.create({
     data: {
       title: `Liste de courses : ${recipe.title}`,
-      description: recipe.title,
+      description,
       type: "PURCHASE",
       dueDate: dayjs().endOf("day").toDate(),
       estimatedAmount: recipe.estimatedCost ?? undefined,

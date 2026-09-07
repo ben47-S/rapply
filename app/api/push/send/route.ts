@@ -91,7 +91,10 @@ export async function POST(req: NextRequest) {
       if (r.user.pushSubscriptions.length > 0) {
         await sendTo(r.user.pushSubscriptions, {
           title: r.title,
-          body: r.description || "Rappel",
+          body:
+            r.type === "PURCHASE"
+              ? "Liste de courses à faire"
+              : r.description || "Rappel",
         });
         remindersSent++;
       }

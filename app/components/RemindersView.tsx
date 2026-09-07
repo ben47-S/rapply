@@ -650,8 +650,10 @@ function ReminderModal({
             )}
             {r?.description && (
               <div>
-                <p className="text-xs text-muted mb-1">Description</p>
-                <p className="text-sm">{r.description}</p>
+                <p className="text-xs text-muted mb-1">
+                  {r.type === "PURCHASE" ? "Ingrédients" : "Description"}
+                </p>
+                <p className="text-sm whitespace-pre-line">{r.description}</p>
               </div>
             )}
             {r?.isRecurring && (
