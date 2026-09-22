@@ -13,7 +13,7 @@ export async function GET(
 
   const reminder = await prisma.reminder.findFirst({
     where: { id: id, userId },
-    include: { notes: true, category: true },
+    include: { notes: true, category: true, items: { orderBy: { order: "asc" } } },
   });
 
   if (!reminder) {
@@ -50,6 +50,7 @@ export async function PUT(
   }
 
   const updateData: any = { ...body };
+  delete updateData.items;
   if (body.dueDate) {
     updateData.sentStages = 0;
     updateData.dueDate = new Date(body.dueDate);
@@ -67,15 +68,53 @@ export async function PUT(
     updateData.completedAt = null;
   }
 
+  if (body.items && Array.isArray(body.items)) {
+    await prisma.reminderItem.deleteMany({ where: { reminderId: id } });
+    if (body.items.length > 0) {
+      await prisma.reminderItem.createMany({
+        data: body.items.map((item: { id?: string; label: string; checked?: boolean }, i: number) => ({
+          label: item.label,
+          checked: item.checked ?? false,
+          order: i,
+          reminderId: id,
+        })),
+      });
+    }
+  }
+
   const updated = await prisma.reminder.update({
     where: { id: id },
     data: updateData,
     include: {
       category: true,
+      items: { orderBy: { order: "asc" } },
     },
   });
 
-  // Création automatique de la transaction si montant estimé et transition vers DONE
+  if (updated.items.length > 0 && updated.items.every((i) => i.checked) && existing.status !== "DONE") {
+    const final = await prisma.reminder.update({
+      where: { id: id },
+      data: { status: "DONE", completedAt: new Date() },
+      include: { category: true, items: { orderBy: { order: "asc" } } },
+    });
+
+    if (final.estimatedAmount) {
+      await prisma.transaction.create({
+        data: {
+          type: "EXPENSE",
+          amount: Number(final.estimatedAmount),
+          note: final.title,
+          userId,
+          reminderId: final.id,
+          categoryId: final.categoryId || undefined,
+          date: new Date(),
+        },
+      });
+    }
+
+    return NextResponse.json(final);
+  }
+
   const amount = body.estimatedAmount !== undefined ? body.estimatedAmount : existing.estimatedAmount;
   const categoryId = body.categoryId !== undefined ? body.categoryId : existing.categoryId;
 

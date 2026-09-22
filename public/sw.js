@@ -3,7 +3,6 @@ const CACHE_NAME = "rapply-cache-v1";
 const PRECACHE_ASSETS = [
   "/",
   "/manifest.json",
-  "/favicon.ico",
   "/icon-192.png",
   "/icon-512.png",
   "/icon-192-maskable.png",

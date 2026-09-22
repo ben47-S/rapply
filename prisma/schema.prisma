@@ -104,6 +104,7 @@ model Reminder {
 
   notes        Note[]
   transactions Transaction[]
+  items        ReminderItem[]
 
   @@index([userId, dueDate])
   @@index([userId, status])
@@ -309,4 +310,15 @@ model Accessory {
   recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
 
   @@index([recipeId])
+}
+
+model ReminderItem {
+  id         String   @id @default(cuid())
+  label      String
+  checked    Boolean  @default(false)
+  order      Int      @default(0)
+  reminderId String
+  reminder   Reminder @relation(fields: [reminderId], references: [id], onDelete: Cascade)
+
+  @@index([reminderId])
 }

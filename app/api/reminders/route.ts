@@ -15,6 +15,7 @@ const reminderSchema = z.object({
   customIntervalDays: z.number().int().positive().optional().nullable(),
   recurrenceEndDate: z.string().datetime().optional().nullable(),
   notifyTiming: z.enum(["REALTIME", "MORNING"]).optional(),
+  items: z.array(z.object({ label: z.string().min(1) })).optional(),
 });
 
 // GET /api/reminders
@@ -33,6 +34,7 @@ export async function GET(req: NextRequest) {
     },
     include: {
       category: true,
+      items: { orderBy: { order: "asc" } },
     },
     orderBy: { dueDate: "asc" },
   });
@@ -72,8 +74,24 @@ export async function POST(req: NextRequest) {
     },
     include: {
       category: true,
+      items: { orderBy: { order: "asc" } },
     },
   });
+
+  if (parsed.data.items && parsed.data.items.length > 0) {
+    await prisma.reminderItem.createMany({
+      data: parsed.data.items.map((item, i) => ({
+        label: item.label,
+        order: i,
+        reminderId: reminder.id,
+      })),
+    });
+    const items = await prisma.reminderItem.findMany({
+      where: { reminderId: reminder.id },
+      orderBy: { order: "asc" },
+    });
+    return NextResponse.json({ ...reminder, items }, { status: 201 });
+  }
 
   return NextResponse.json(reminder, { status: 201 });
 }

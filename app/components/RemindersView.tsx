@@ -179,6 +179,11 @@ export function RemindersView({
                       ~{Number(r.estimatedAmount).toLocaleString("fr-FR")} {currency}
                     </span>
                   )}
+                  {r.items && r.items.length > 0 && (
+                    <span className="font-mono-log text-[10px] text-brass">
+                      ☐ {r.items.filter((i: any) => i.checked).length}/{r.items.length}
+                    </span>
+                  )}
                 </div>
                 <p className="text-parchment truncate">{r.title}</p>
                 {r.description && (
@@ -255,6 +260,17 @@ function ReminderModal({
     alive.current = false;
   }, []);
 
+  const [hasChecklist, setHasChecklist] = useState(
+    (r?.items?.length ?? 0) > 0
+  );
+  const [checklistItems, setChecklistItems] = useState<{ label: string; checked?: boolean }[]>(
+    r?.items?.map((i: any) => ({ label: i.label, checked: i.checked })) ?? []
+  );
+  const addChecklistItem = () =>
+    setChecklistItems((l) => [...l, { label: "" }]);
+  const removeChecklistItem = (idx: number) =>
+    setChecklistItems((l) => l.filter((_, i) => i !== idx));
+
   const [editing, setEditing] = useState(isNew === true);
 
   const toggleStatus = async () => {
@@ -302,6 +318,9 @@ function ReminderModal({
               ? { recurrenceEndDate: r.recurrenceEndDate }
               : {}),
             status: "PENDING",
+            ...(r.items && r.items.length > 0
+              ? { items: r.items.map((i: any) => ({ label: i.label })) }
+              : {}),
           };
           const newRes = await fetch("/api/reminders", {
             method: "POST",
@@ -398,6 +417,9 @@ function ReminderModal({
                 : {}),
             }
           : { frequency: undefined, customIntervalDays: undefined, recurrenceEndDate: undefined }),
+        ...(hasChecklist && checklistItems.some((i) => i.label.trim())
+          ? { items: checklistItems.filter((i) => i.label.trim()).map((i) => ({ label: i.label.trim(), checked: i.checked ?? false })) }
+          : { items: [] }),
       };
       const res = isNew
         ? await fetch("/api/reminders", {
@@ -552,6 +574,59 @@ function ReminderModal({
               </select>
             </div>
 
+            {type !== "SUBSCRIPTION" && (
+              <>
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={hasChecklist}
+                    onChange={(e) => {
+                      setHasChecklist(e.target.checked);
+                      if (e.target.checked && checklistItems.length === 0) {
+                        setChecklistItems([{ label: "" }]);
+                      }
+                    }}
+                    className="accent-brass"
+                  />
+                  Checklist
+                </label>
+
+                {hasChecklist && (
+                  <div className="space-y-2 pl-1 border-l border-border-log">
+                    {checklistItems.map((item, idx) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input
+                          value={item.label}
+                          onChange={(e) =>
+                            setChecklistItems((l) =>
+                              l.map((it, i) =>
+                                i === idx ? { ...it, label: e.target.value } : it
+                              )
+                            )
+                          }
+                          placeholder="Élément..."
+                          className={`${inputCls} flex-1 min-w-0`}
+                        />
+                        <button
+                          onClick={() => removeChecklistItem(idx)}
+                          aria-label="Supprimer"
+                          className="text-rust hover:underline text-sm shrink-0"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={addChecklistItem}
+                      className="text-xs text-brass hover:underline flex items-center gap-1"
+                    >
+                      + Ajouter
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -656,6 +731,50 @@ function ReminderModal({
                 <p className="text-sm whitespace-pre-line">{r.description}</p>
               </div>
             )}
+            {r?.items && r.items.length > 0 && (() => {
+              const sorted = [...r.items].sort(
+                (a: any, b: any) => Number(a.checked) - Number(b.checked) || a.order - b.order
+              );
+              const allChecked = sorted.every((i: any) => i.checked);
+              return (
+                <div>
+                  <p className="text-xs text-muted mb-1">Checklist</p>
+                  <ul className="space-y-1">
+                    {sorted.map((item: any) => (
+                      <li key={item.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={item.checked}
+                          disabled={allChecked}
+                          onChange={async () => {
+                            const res = await fetch(
+                              `/api/reminders/${r.id}/items/${item.id}`,
+                              {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ checked: true }),
+                              }
+                            );
+                            if (res.ok) {
+                              const updated: R = await res.json();
+                              onSaved(updated);
+                            }
+                          }}
+                          className="accent-brass"
+                        />
+                        <span
+                          className={`text-sm ${
+                            item.checked ? "line-through text-muted" : ""
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
             {r?.isRecurring && (
               <div>
                 <p className="text-xs text-muted mb-1">Récurrence</p>
