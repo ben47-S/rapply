@@ -20,24 +20,27 @@ Next.js 16 (App Router) personal-management app (French UI): reminders, notes, f
 - `pnpm lint` — `eslint` via flat config `eslint.config.mjs`.
 - `npx prisma generate` — regenerate the Prisma client after editing `prisma/schema.prisma`. **There is no npm script for this; run it directly.**
 - `npx prisma migrate dev` / `npx prisma db push` — schema migrations. Config lives in `prisma7.config.ts` (Prisma 7's default config filename).
-- Seed: `npx prisma db seed` runs `prisma/seed.ts` (via `tsx`). The seed command is configured under `migrations.seed` in `prisma7.config.ts` — **not** in `package.json` `prisma.seed`, which Prisma 7 ignores. The seed reuses the driver-adapter client from `app/lib/prisma.ts` since Prisma 7 has no built-in engine.
-- No test runner, formatter, or `typecheck` script is configured.
+- Seed: `pnpm seed` runs `prisma/seed.ts` (via `tsx`). The seed command is configured under `migrations.seed` in `prisma7.config.ts`, not `package.json` `prisma.seed`. `pnpm create-user` runs the interactive user creator in `prisma/create-user.ts`. Both reuse the driver-adapter client from `app/lib/prisma.ts` because Prisma 7 has no built-in engine.
+- No test runner, formatter, or `typecheck` script is configured; `pnpm build` performs type checking.
 
 ## Prisma (high-signal gotchas)
 
 - Prisma 7.10 with a **driver adapter**: the client is created in `app/lib/prisma.ts` using `PrismaPg` from `@prisma/adapter-pg`. Prisma 7 has no built-in engine, so this adapter is required — do not switch to the legacy `prisma-client-js` generator or drop the adapter.
 - The client is generated into `app/generated/prisma` (output set in `prisma/schema.prisma`) and is **gitignored**. Import it as `@/app/generated/prisma/client`. Regenerate after any schema change or the app breaks at runtime.
 - Datasource URL is read from `DATABASE_URL` in `.env` (loaded by `import "dotenv/config"` in `prisma7.config.ts`).
+- Do not use the global Prisma CLI in the Dockerfile as a reference for local work: it currently installs `prisma@6.8.2` while the project uses Prisma `7.10.0`.
 
 ## Architecture
 
-- Route handlers live under `app/api/<resource>/route.ts` (collection) and `app/api/<resource>/[id]/route.ts` (item). Each handler reads the authenticated user via `getUserId(req)` from `app/lib/auth.ts`.
+- Route handlers live under `app/api/<resource>/route.ts` (collection) and `app/api/<resource>/[id]/route.ts` (item). Normal handlers rely on `proxy.ts` to inject `x-user-id`, then read it with `getUserId(req)` from `app/lib/auth.ts`; do not add a second cookie-auth flow inside them. Scope every user-owned Prisma query by that user ID.
 - Auth: JWT in the httpOnly cookie `token` (signed with `JWT_SECRET`) is verified in **`proxy.ts` at the repo root** (Next 16 renamed `middleware` → `proxy`; the file must live at project root, NOT in `app/`), which injects `x-user-id`. `app/api/auth/login/route.ts` issues the token. The matcher excludes `/login`, `/api/auth/login`, and static assets.
 - Proxy runs in the Node.js runtime (not configurable) and exports a `proxy` function. Don't recreate `middleware.ts` inside `app/` — Next 16 will not load it.
 - Push notifications use `web-push` (VAPID keys in `.env`); `app/api/push/send` is protected by `CRON_SECRET` and meant to be called by a cron job.
-- `next-pwa` is installed but **not configured** in `next.config.ts` — do not assume PWA/offline behavior.
+- PWA behavior is limited to the checked-in `public/manifest.json` and `public/sw.js`; do not assume `next-pwa` or offline support.
 - Auth cookie gotcha: in `app/api/auth/login/route.ts` the `token` cookie's `secure` flag is derived from the request protocol (`x-forwarded-proto` header), **not** from `NODE_ENV`. Behind an HTTPS proxy (e.g. ngrok) `NODE_ENV` is still `development`, so a `NODE_ENV`-based `secure` would be false and the browser drops the cookie → user stays stuck on `/login`. Keep `secure` based on `x-forwarded-proto`/`req.nextUrl.protocol`.
-- API route validation: routes use **zod** schemas for request body validation (see `app/api/reminders/route.ts` for the pattern: `z.object(...)` → `safeParse(body)` → return 400 with `.flatten()` on failure).
+- API route validation: most domain mutations use **zod** schemas (see `app/api/reminders/route.ts`: `z.object(...)` → `safeParse(body)` → return 400 with `.flatten()` on failure), but some endpoints such as push subscription use explicit manual checks.
+- Server-rendered dashboard pages call internal APIs through `app/lib/server-fetch.ts`, which forwards the `token` cookie and requires `NEXT_PUBLIC_APP_URL`; follow that pattern instead of duplicating fetch/auth plumbing.
+- The UI is French (`lang="fr"`) and uses the custom Fraunces, IBM Plex Mono, and Inter font variables with the dark logbook palette defined in `app/globals.css`. Keep new interface text and styling aligned with those conventions.
 - Rate limiting (login): `app/lib/rate-limit.ts` is **in-memory only** — lost on server restart. 5 failed attempts per IP within 15 min triggers a 15-min block.
 - The proxy (`proxy.ts`) also enforces **CSRF** on mutating `/api/*` requests by checking `origin`/`referer` against the host, and validates **token version** for session revocation.
 
@@ -48,3 +51,7 @@ Next.js 16 (App Router) personal-management app (French UI): reminders, notes, f
 - Budgets alert once per period via `alertLevel` + `alertSentAt` (thresholds 80/95/100 %); reset when `alertSentAt` predates the period start.
 - `ServiceWorkerRegistrar` (in `app/(dashboard)/layout.tsx`) registers `public/sw.js`; `PushSubscribeButton` (on the dashboard) posts the subscription to `POST /api/push/subscribe` (this one stays behind `proxy.ts` so `x-user-id` is available).
 - `public/icon-192.png` / `public/icon-512.png` are placeholders generated with ImageMagick — replace with real branding.
+
+## Recipes
+
+- Recipes are a separate feature at `app/recettes/page.tsx`, `app/components/RecipesView.tsx`, and `app/api/recipes`; include recipe ownership and shopping-list routes when changing the feature or architecture.
