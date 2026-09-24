@@ -521,23 +521,23 @@ function EventModal({
             </div>
           )}
 
-          <div className="flex gap-2">
-            <div className="flex-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="min-w-0">
               <label className="block text-xs text-muted mb-1">Début</label>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+                className="w-full min-w-0 rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
               />
             </div>
-            <div className="flex-1">
+            <div className="min-w-0">
               <label className="block text-xs text-muted mb-1">Fin</label>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+                className="w-full min-w-0 rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
               />
             </div>
           </div>
