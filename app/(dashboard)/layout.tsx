@@ -17,7 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <ServiceWorkerRegistrar />
 
-      <nav className="fixed bottom-0 inset-x-0 z-50 flex border-t border-border-log bg-surface md:hidden">
+      <nav className="fixed bottom-0 inset-x-0 z-50 flex border-t border-border-log bg-surface pb-safe md:hidden">
         <NavLinks variant="bottom" />
       </nav>
     </div>
