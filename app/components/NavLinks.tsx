@@ -56,7 +56,7 @@ export function NavLinks({ variant }: { variant: "sidebar" | "bottom" }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 truncate px-1 py-3 text-center text-[11px] leading-tight transition-colors ${
+            className={`flex-1 truncate px-2 py-4 text-center text-sm leading-tight transition-colors ${
               active ? "text-parchment" : "text-muted hover:text-parchment"
             }`}
           >
