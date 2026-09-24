@@ -21,6 +21,9 @@ export const metadata = {
 
 export const viewport = {
   themeColor: "#12161F",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 const fraunces = Fraunces({
