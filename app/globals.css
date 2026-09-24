@@ -35,7 +35,7 @@ body {
   z-index: 100;
   display: grid;
   place-items: center;
-  background: var(--color-ink);
+  background: #232323;
   animation: initial-loading-exit 0.35s ease 0.55s forwards;
 }
 
