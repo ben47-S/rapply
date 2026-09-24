@@ -27,6 +27,18 @@ body {
   .pwa-bottom-nav {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
+
+  .pwa-sheet-overlay {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+.pwa-sheet-overlay {
+  z-index: 60;
+}
+
+.pwa-sheet {
+  max-height: min(90vh, calc(100dvh - 1rem));
 }
 
 .initial-loading {
