@@ -29,6 +29,47 @@ body {
   }
 }
 
+.initial-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--color-ink);
+  animation: initial-loading-exit 0.35s ease 0.55s forwards;
+}
+
+.initial-loading__logo {
+  width: min(42vw, 180px);
+  height: auto;
+  animation: initial-loading-logo 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes initial-loading-logo {
+  from {
+    transform: scale(0.96);
+    opacity: 0.78;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes initial-loading-exit {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .initial-loading,
+  .initial-loading__logo {
+    animation: none;
+  }
+}
+
 @keyframes stamp-impact {
   0% {
     transform: scale(0) rotate(-15deg);

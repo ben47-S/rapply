@@ -1,4 +1,5 @@
 import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
+import { InitialLoading } from "@/app/components/InitialLoading";
 import "./globals.css";
 
 export const metadata = {
@@ -48,7 +49,10 @@ const inter = Inter({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${fraunces.variable} ${plexMono.variable} ${inter.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <InitialLoading />
+        {children}
+      </body>
     </html>
   );
 }
