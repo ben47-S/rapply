@@ -6,6 +6,9 @@ import { IconButton, PlusIcon } from "@/app/components/IconButton";
 import { StatusStamp } from "@/app/components/StatusStamp";
 import { TYPE_LABELS, FREQ_LABELS, derivedStatus, nextDue } from "@/app/lib/recurrence";
 
+const inputCls =
+  "rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass";
+
 function Spinner({ className = "" }: { className?: string }) {
   return (
     <span

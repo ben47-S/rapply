@@ -61,9 +61,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const { items: parsedItems, ...rest } = parsed.data;
+
   const reminder = await prisma.reminder.create({
     data: {
-      ...parsed.data,
+      ...rest,
       dueDate: new Date(parsed.data.dueDate),
       estimatedAmount: parsed.data.estimatedAmount ?? undefined,
       categoryId: parsed.data.categoryId ?? undefined,
@@ -78,9 +80,9 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  if (parsed.data.items && parsed.data.items.length > 0) {
+  if (parsedItems && parsedItems.length > 0) {
     await prisma.reminderItem.createMany({
-      data: parsed.data.items.map((item, i) => ({
+      data: parsedItems.map((item, i) => ({
         label: item.label,
         order: i,
         reminderId: reminder.id,
