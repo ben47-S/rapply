@@ -159,7 +159,7 @@ export function SettingsView({
   };
 
   return (
-    <div>
+    <div className="mobile-page-root">
       <div className="mobile-page-header flex items-center gap-3 mb-6">
         <BackButton />
         <h1 className="font-display text-2xl text-parchment">Paramètres</h1>

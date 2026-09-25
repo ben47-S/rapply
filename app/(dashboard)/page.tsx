@@ -118,7 +118,7 @@ export default async function DashboardPage() {
   const recentNotes = nts.slice(0, 3);
 
   return (
-    <div>
+    <div className="mobile-page-root">
       <div className="mobile-page-header flex items-start justify-between gap-4 mb-6">
         <h1 className="font-display text-2xl text-parchment">Tableau de bord</h1>
       </div>

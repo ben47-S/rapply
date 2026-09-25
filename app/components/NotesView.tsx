@@ -45,7 +45,7 @@ export function NotesView({ notes: initial, reminders }: { notes: N[]; reminders
   };
 
   return (
-    <div>
+    <div className="mobile-page-root mobile-page-root--search">
       <div className="mobile-page-header flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl text-parchment">Notes</h1>
         <IconButton

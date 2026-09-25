@@ -19,6 +19,8 @@
 
 :root {
   --mobile-header-height: calc(3.25rem + env(safe-area-inset-top));
+  --mobile-page-title-height: 3.5rem;
+  --mobile-page-subheader-height: 3.25rem;
 }
 
 body {
@@ -64,20 +66,46 @@ body {
 }
 
 .mobile-page-header {
-  position: sticky;
+  position: fixed;
   top: var(--mobile-header-height);
+  left: 0;
+  right: 0;
   z-index: 40;
-  margin-inline: -1rem;
+  height: var(--mobile-page-title-height);
+  margin-inline: 0;
   padding: 0.25rem 1rem 0.5rem;
   background: var(--color-ink);
 }
 
 .mobile-page-subheader {
-  top: calc(var(--mobile-header-height) + 3.25rem);
+  top: calc(var(--mobile-header-height) + var(--mobile-page-title-height));
+  height: var(--mobile-page-subheader-height);
 }
 
 .mobile-page-filter {
-  top: calc(var(--mobile-header-height) + 6.5rem);
+  top: calc(
+    var(--mobile-header-height) + var(--mobile-page-title-height) +
+      var(--mobile-page-subheader-height)
+  );
+  height: var(--mobile-page-subheader-height);
+}
+
+.mobile-page-root {
+  padding-top: calc(var(--mobile-header-height) + var(--mobile-page-title-height));
+}
+
+.mobile-page-root--search {
+  padding-top: calc(
+    var(--mobile-header-height) + var(--mobile-page-title-height) +
+      var(--mobile-page-subheader-height)
+  );
+}
+
+.mobile-page-root--filters {
+  padding-top: calc(
+    var(--mobile-header-height) + var(--mobile-page-title-height) +
+      (var(--mobile-page-subheader-height) * 2)
+  );
 }
 
 @media (min-width: 768px) {
@@ -87,13 +115,22 @@ body {
 
   .mobile-page-header {
     position: static;
-    margin-inline: 0;
+    height: auto;
+    left: auto;
+    right: auto;
     padding: 0;
   }
 
   .mobile-page-subheader,
   .mobile-page-filter {
     top: auto;
+    height: auto;
+  }
+
+  .mobile-page-root,
+  .mobile-page-root--search,
+  .mobile-page-root--filters {
+    padding-top: 0;
   }
 }
 

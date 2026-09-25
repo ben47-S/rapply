@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { IconButton, PlusIcon } from "@/app/components/IconButton";
+import { BackButton, IconButton, PlusIcon } from "@/app/components/IconButton";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -102,9 +102,12 @@ export function RecipesView({
   };
 
   return (
-    <div>
+    <div className="mobile-page-root mobile-page-root--search">
       <div className="mobile-page-header flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl text-parchment">Recettes</h1>
+        <div className="flex items-center gap-3">
+          <BackButton />
+          <h1 className="font-display text-2xl text-parchment">Recettes</h1>
+        </div>
         <IconButton
           ariaLabel="Ajouter une recette"
           onClick={() => setOpen({})}

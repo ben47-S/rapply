@@ -1,6 +1,5 @@
 import { serverFetch } from "@/app/lib/server-fetch";
 import { RecipesView } from "@/app/components/RecipesView";
-import { BackButton } from "@/app/components/IconButton";
 
 export default async function RecettesPage() {
   const [recipes, { currency }] = await Promise.all([
@@ -10,10 +9,6 @@ export default async function RecettesPage() {
 
   return (
     <div className="mobile-app-main px-2 pb-6 sm:px-4">
-      <div className="mobile-page-header flex items-center gap-3 mb-6">
-        <BackButton />
-        <h1 className="font-display text-2xl text-parchment">Recettes</h1>
-      </div>
       <RecipesView initial={recipes} currency={currency} />
     </div>
   );

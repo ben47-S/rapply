@@ -86,7 +86,7 @@ export function RemindersView({
     .sort((a, b) => dayjs(a.dueDate).valueOf() - dayjs(b.dueDate).valueOf());
 
   return (
-    <div>
+    <div className="mobile-page-root mobile-page-root--filters">
       <div className="mobile-page-header flex items-center justify-between mb-2">
         <h1 className="font-display text-2xl text-parchment">Rappels</h1>
         <IconButton
