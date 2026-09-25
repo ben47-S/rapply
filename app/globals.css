@@ -19,7 +19,7 @@
 
 :root {
   --mobile-header-height: calc(3.25rem + env(safe-area-inset-top));
-  --mobile-page-title-height: 3.5rem;
+  --mobile-page-title-height: calc(3.5rem + 3px);
   --mobile-page-subheader-height: 3.25rem;
 }
 
@@ -70,8 +70,11 @@ body {
   z-index: 40;
   height: var(--mobile-page-title-height);
   margin-inline: 0;
-  padding: 0.25rem 1rem 0.5rem;
+  margin-bottom: 0;
+  padding: 0.25rem 1rem calc(0.5rem + 3px);
   background: var(--color-ink);
+  box-shadow: 0 0.5rem 0.75rem var(--color-ink);
+  isolation: isolate;
 }
 
 .mobile-page-subheader {
