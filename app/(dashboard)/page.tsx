@@ -119,7 +119,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="mobile-page-header flex items-start justify-between gap-4 mb-6">
         <h1 className="font-display text-2xl text-parchment">Tableau de bord</h1>
       </div>
 
