@@ -103,7 +103,7 @@ export function RemindersView({
         </IconButton>
       </div>
 
-      <div className="mobile-page-header !top-[7.5rem] !z-30 flex gap-2 mb-2 overflow-x-auto">
+      <div className="mobile-page-header mobile-page-subheader !z-30 flex gap-2 mb-2 overflow-x-auto">
         {([
           { key: "tasks", label: "Ponctuels" },
           { key: "subscriptions", label: "Abonnements" },
@@ -122,7 +122,7 @@ export function RemindersView({
         ))}
       </div>
 
-      <div className="mobile-page-header !top-[10.75rem] !z-20 flex gap-2 mb-6 overflow-x-auto">
+      <div className="mobile-page-header mobile-page-filter !z-20 flex gap-2 mb-6 overflow-x-auto">
         {([
           { key: "tous", label: "Tous" },
           { key: "avenir", label: "À venir" },

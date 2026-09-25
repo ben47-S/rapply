@@ -58,7 +58,7 @@ export function NotesView({ notes: initial, reminders }: { notes: N[]; reminders
         </IconButton>
       </div>
 
-      <div className="mobile-page-header !top-[7.5rem] !z-30">
+      <div className="mobile-page-header mobile-page-subheader !z-30">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}

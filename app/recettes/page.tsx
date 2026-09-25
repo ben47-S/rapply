@@ -9,7 +9,7 @@ export default async function RecettesPage() {
   ]);
 
   return (
-    <div className="px-2 pt-20 pb-6 sm:px-4 md:pt-6">
+    <div className="mobile-app-main px-2 pb-6 sm:px-4">
       <div className="mobile-page-header flex items-center gap-3 mb-6">
         <BackButton />
         <h1 className="font-display text-2xl text-parchment">Recettes</h1>
