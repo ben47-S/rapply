@@ -26,7 +26,7 @@
 body {
   background: var(--color-ink);
   color: var(--color-parchment);
-  margin: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  margin: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 @media (max-width: 767px) {
