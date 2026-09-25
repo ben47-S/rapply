@@ -1,43 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import webpush from "web-push";
 import dayjs from "dayjs";
 import { windowStart, stagesFor } from "@/app/lib/recurrence";
-
-webpush.setVapidDetails(
-  "mailto:ton@email.com",
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
-
-type Sub = { endpoint: string; p256dh: string; auth: string };
-type PushPayload = { title: string; body: string };
-
-function statusOf(e: unknown): number | undefined {
-  if (e && typeof e === "object" && "statusCode" in e) {
-    return (e as { statusCode?: number }).statusCode;
-  }
-  return undefined;
-}
-
-async function sendTo(subscriptions: Sub[], payload: PushPayload) {
-  for (const sub of subscriptions) {
-    try {
-      await webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify(payload)
-      );
-    } catch (err) {
-      if (statusOf(err) === 404 || statusOf(err) === 410) {
-        await prisma.pushSubscription
-          .delete({ where: { endpoint: sub.endpoint } })
-          .catch(() => {});
-      } else {
-        console.error("Échec envoi push:", err);
-      }
-    }
-  }
-}
+import { sendPushToMany } from "@/app/lib/push";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -89,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
     if (highestUnset >= 0) {
       if (r.user.pushSubscriptions.length > 0) {
-        await sendTo(r.user.pushSubscriptions, {
+        await sendPushToMany(r.user.pushSubscriptions, {
           title: r.title,
           body:
             r.type === "PURCHASE"
@@ -137,7 +102,7 @@ export async function POST(req: NextRequest) {
     if (crossed <= already) continue;
 
     const name = b.category ? b.category.name : "Global";
-    await sendTo(subs, {
+    await sendPushToMany(subs, {
       title: `Budget ${name}`,
       body: `À ${Math.round(pct)} % (${spent.toLocaleString("fr-FR")} / ${amount.toLocaleString("fr-FR")} ${b.user.currency})`,
     });

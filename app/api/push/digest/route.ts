@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
-import webpush from "web-push";
 import dayjs from "dayjs";
-
-webpush.setVapidDetails(
-  "mailto:ton@email.com",
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+import { sendPushToMany } from "@/app/lib/push";
 
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -28,15 +22,14 @@ export async function POST(req: NextRequest) {
     orderBy: { dueDate: "asc" },
   });
 
-  type Sub = { endpoint: string; p256dh: string; auth: string };
   type RemItem = { title: string; dueDate: Date };
-  const byUser = new Map<string, { subs: Sub[]; items: RemItem[] }>();
+  const byUser = new Map<string, { subs: typeof reminders[number]["user"]["pushSubscriptions"]; items: RemItem[] }>();
   for (const r of reminders) {
     const entry =
       byUser.get(r.userId) ??
-      { subs: r.user.pushSubscriptions as Sub[], items: [] };
+      { subs: r.user.pushSubscriptions, items: [] };
     entry.items.push({ title: r.title, dueDate: r.dueDate });
-    entry.subs = r.user.pushSubscriptions as Sub[];
+    entry.subs = r.user.pushSubscriptions;
     byUser.set(r.userId, entry);
   }
 
@@ -46,27 +39,10 @@ export async function POST(req: NextRequest) {
     const body = items
       .map((r) => `• ${r.title} (${dayjs(r.dueDate).format("HH:mm")})`)
       .join("\n");
-    for (const sub of subs) {
-      try {
-        await webpush.sendNotification(
-          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-          JSON.stringify({ title: "Résumé du jour", body })
-        );
-        sent++;
-      } catch (err) {
-        const code =
-          err && typeof err === "object" && "statusCode" in err
-            ? (err as { statusCode?: number }).statusCode
-            : undefined;
-        if (code === 404 || code === 410) {
-          await prisma.pushSubscription
-            .delete({ where: { endpoint: sub.endpoint } })
-            .catch(() => {});
-        } else {
-          console.error("Échec envoi push:", err);
-        }
-      }
-    }
+    sent += await sendPushToMany(subs, {
+      title: "Résumé du jour",
+      body,
+    });
   }
 
   return NextResponse.json({ digest: sent });
