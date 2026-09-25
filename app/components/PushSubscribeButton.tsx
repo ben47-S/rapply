@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 type State = "idle" | "loading" | "granted" | "denied" | "unsupported";
 
 export function PushSubscribeButton() {
+  const canTest = process.env.NODE_ENV === "development";
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState("");
   const [subscriptionReady, setSubscriptionReady] = useState(false);
@@ -111,13 +112,15 @@ export function PushSubscribeButton() {
     return (
       <div className="flex flex-col items-start gap-2">
         <span className="text-xs text-teal-log">Notifications activées</span>
-        <button
-          onClick={testNotification}
-          disabled={testing || !subscriptionReady}
-          className="border border-border-log text-muted text-xs px-3 py-1.5 rounded hover:border-brass hover:text-parchment transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {testing ? "Envoi…" : "Tester la notification"}
-        </button>
+        {canTest && (
+          <button
+            onClick={testNotification}
+            disabled={testing || !subscriptionReady}
+            className="border border-border-log text-muted text-xs px-3 py-1.5 rounded hover:border-brass hover:text-parchment transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {testing ? "Envoi…" : "Tester la notification"}
+          </button>
+        )}
         {testMessage && <span className="text-xs text-teal-log">{testMessage}</span>}
         {error && <span className="text-xs text-rust">{error}</span>}
       </div>

@@ -4,6 +4,10 @@ import { getUserId } from "@/app/lib/auth";
 import { pushStatusCode, sendPush } from "@/app/lib/push";
 
 export async function POST(req: NextRequest) {
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json({ error: "Route disponible uniquement en développement." }, { status: 404 });
+  }
+
   const userId = getUserId(req);
   const body = await req.json().catch(() => null);
   const endpoint = body?.endpoint;
