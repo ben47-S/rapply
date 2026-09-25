@@ -87,7 +87,7 @@ export function RemindersView({
 
   return (
     <div className="mobile-page-root mobile-page-root--filters">
-      <div className="mobile-page-header flex items-center justify-between mb-2">
+      <div className="mobile-page-header flex items-center justify-between">
         <h1 className="font-display text-2xl text-parchment">Rappels</h1>
         <IconButton
           ariaLabel="Ajouter un rappel"
@@ -103,7 +103,7 @@ export function RemindersView({
         </IconButton>
       </div>
 
-      <div className="mobile-page-header mobile-page-subheader !z-30 flex gap-2 mb-2 overflow-x-auto">
+      <div className="mobile-page-header mobile-page-subheader !z-30 flex gap-2 overflow-x-auto">
         {([
           { key: "tasks", label: "Ponctuels" },
           { key: "subscriptions", label: "Abonnements" },
