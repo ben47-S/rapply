@@ -91,7 +91,7 @@ export function FinancesView({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mobile-page-header flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl text-parchment">Finances</h1>
         <div className="flex items-center gap-2">
           <IconButton

@@ -87,7 +87,7 @@ export function RemindersView({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mobile-page-header flex items-center justify-between mb-2">
         <h1 className="font-display text-2xl text-parchment">Rappels</h1>
         <IconButton
           ariaLabel="Ajouter un rappel"
@@ -103,7 +103,7 @@ export function RemindersView({
         </IconButton>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="mobile-page-header !top-[7.5rem] !z-30 flex gap-2 mb-2 overflow-x-auto">
         {([
           { key: "tasks", label: "Ponctuels" },
           { key: "subscriptions", label: "Abonnements" },
@@ -122,7 +122,7 @@ export function RemindersView({
         ))}
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="mobile-page-header !top-[10.75rem] !z-20 flex gap-2 mb-6 overflow-x-auto">
         {([
           { key: "tous", label: "Tous" },
           { key: "avenir", label: "À venir" },
@@ -526,7 +526,7 @@ function ReminderModal({
                 type="datetime-local"
                 value={due}
                 onChange={(e) => setDue(e.target.value)}
-                className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+                className="block w-full min-w-0 max-w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
               />
             </div>
 

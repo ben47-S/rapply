@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <NavLinks variant="sidebar" />
       </aside>
 
-      <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:py-6 md:pb-6">
+      <main className="flex-1 px-4 pt-20 pb-24 md:px-8 md:py-6 md:pb-6">
         {children}
       </main>
 

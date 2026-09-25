@@ -23,6 +23,14 @@ body {
   margin: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 @media (display-mode: standalone) {
   .pwa-bottom-nav {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
@@ -39,6 +47,23 @@ body {
 
 .pwa-sheet {
   max-height: min(90vh, calc(100dvh - 1rem));
+}
+
+.mobile-page-header {
+  position: sticky;
+  top: 3.25rem;
+  z-index: 40;
+  margin-inline: -1rem;
+  padding: 0.5rem 1rem 0.75rem;
+  background: var(--color-ink);
+}
+
+@media (min-width: 768px) {
+  .mobile-page-header {
+    position: static;
+    margin-inline: 0;
+    padding: 0;
+  }
 }
 
 .initial-loading {

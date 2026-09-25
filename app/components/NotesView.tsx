@@ -46,7 +46,7 @@ export function NotesView({ notes: initial, reminders }: { notes: N[]; reminders
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mobile-page-header flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl text-parchment">Notes</h1>
         <IconButton
           ariaLabel="Ajouter une note"
@@ -58,12 +58,14 @@ export function NotesView({ notes: initial, reminders }: { notes: N[]; reminders
         </IconButton>
       </div>
 
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Rechercher une note…"
-        className="w-full rounded border border-border-log bg-ink px-3 py-2 text-sm outline-none focus:border-brass mb-6"
-      />
+      <div className="mobile-page-header !top-[7.5rem] !z-30">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher une note…"
+          className="w-full rounded border border-border-log bg-ink px-3 py-2 text-sm outline-none focus:border-brass"
+        />
+      </div>
 
       {notes.length === 0 ? (
         <p className="text-sm text-muted mb-4">Aucune note pour le moment.</p>

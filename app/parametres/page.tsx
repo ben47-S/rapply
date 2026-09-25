@@ -16,7 +16,7 @@ export default async function ParametresPage() {
     .reduce((sum: number, t: any) => sum + Number(t.amount), 0);
 
   return (
-    <div className="min-h-screen px-4 py-6 md:px-8 md:py-6">
+    <div className="min-h-screen px-4 pt-20 pb-6 md:px-8 md:py-6">
       <SettingsView
         currency={currency}
         totalIncome={totalIncome}

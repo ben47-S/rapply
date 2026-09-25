@@ -68,7 +68,7 @@ export function BudgetsView({
 
   return (
     <div>
-      <div className="flex items-center gap-2 mb-6">
+      <div className="mobile-page-header flex items-center gap-2 mb-6">
         <BackButton />
         <h1 className="font-display text-2xl text-parchment">Budgets</h1>
         <IconButton

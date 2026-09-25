@@ -103,7 +103,7 @@ export function RecipesView({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mobile-page-header flex items-center justify-between mb-6">
         <h1 className="font-display text-2xl text-parchment">Recettes</h1>
         <IconButton
           ariaLabel="Ajouter une recette"
@@ -115,12 +115,14 @@ export function RecipesView({
         </IconButton>
       </div>
 
-      <input
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Rechercher une recette…"
-        className="w-full rounded border border-border-log bg-ink px-3 py-2 text-sm outline-none focus:border-brass mb-6"
-      />
+      <div className="mobile-page-header !top-[7.5rem] !z-30">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher une recette…"
+          className="w-full rounded border border-border-log bg-ink px-3 py-2 text-sm outline-none focus:border-brass"
+        />
+      </div>
 
       {recipes.length === 0 ? (
         <p className="text-sm text-muted mb-4">Aucune recette pour le moment.</p>
