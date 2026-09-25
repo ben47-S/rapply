@@ -158,7 +158,7 @@ export function ScheduleView({
 
   return (
     <div className="mobile-page-root">
-      <div className="mobile-page-header flex items-center justify-between mb-2 flex-wrap gap-2">
+      <div className="mobile-page-header flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-5">
           <h1 className="font-display text-2xl text-parchment">Planning</h1>
           <IconButton
