@@ -55,11 +55,8 @@ body {
   max-height: min(90vh, calc(100dvh - 1rem));
 }
 
-.mobile-app-main {
-  padding-top: var(--mobile-header-height);
-}
-
 .mobile-app-header {
+  box-sizing: border-box;
   min-height: var(--mobile-header-height);
   padding-top: max(0.75rem, env(safe-area-inset-top));
   padding-bottom: 0.75rem;
@@ -109,10 +106,6 @@ body {
 }
 
 @media (min-width: 768px) {
-  .mobile-app-main {
-    padding-top: 1.5rem;
-  }
-
   .mobile-page-header {
     position: static;
     height: auto;

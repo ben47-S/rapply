@@ -8,7 +8,7 @@ export default async function RecettesPage() {
   ]);
 
   return (
-    <div className="mobile-app-main px-2 pb-6 sm:px-4">
+    <div className="px-2 pb-6 sm:px-4 md:py-6">
       <RecipesView initial={recipes} currency={currency} />
     </div>
   );
