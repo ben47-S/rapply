@@ -68,7 +68,7 @@ body {
   top: var(--mobile-header-height);
   z-index: 40;
   margin-inline: -1rem;
-  padding: 0.5rem 1rem 0.75rem;
+  padding: 0.25rem 1rem 0.5rem;
   background: var(--color-ink);
 }
 
