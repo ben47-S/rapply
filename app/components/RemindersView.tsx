@@ -765,7 +765,7 @@ function ReminderModal({
                             }
                             setItemLoadingId(null);
                           }}
-                          disabled={allChecked || itemLoadingId === item.id}
+                           disabled={itemLoadingId === item.id}
                           className="accent-brass"
                         />
                         {itemLoadingId === item.id && <Spinner className="ml-1" />}
