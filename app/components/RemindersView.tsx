@@ -87,60 +87,60 @@ export function RemindersView({
 
   return (
     <div className="mobile-page-root mobile-page-root--filters">
-      <div className="mobile-page-header flex items-center justify-between">
-        <h1 className="font-display text-2xl text-parchment">Rappels</h1>
-        <IconButton
-          ariaLabel="Ajouter un rappel"
-          onClick={() =>
-            setOpen({
-              defaultType: scope === "subscriptions" ? "SUBSCRIPTION" : undefined,
-            })
-          }
-          variant="brass"
-          className="h-7 w-7 sm:h-6 sm:w-6"
-        >
-          <PlusIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
-        </IconButton>
-      </div>
-
-      <div className="mobile-page-header mobile-page-subheader !z-30 flex gap-2 overflow-x-auto">
-        {([
-          { key: "tasks", label: "Ponctuels" },
-          { key: "subscriptions", label: "Abonnements" },
-        ] as const).map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setScope(p.key)}
-            className={`px-3 py-1.5 text-xs rounded border ${
-              scope === p.key
-                ? "border-brass text-parchment bg-ink"
-                : "border-border-log text-muted"
-            }`}
+      <div className="mobile-page-header flex flex-col">
+        <div className="flex items-center justify-between">
+          <h1 className="font-display text-2xl text-parchment">Rappels</h1>
+          <IconButton
+            ariaLabel="Ajouter un rappel"
+            onClick={() =>
+              setOpen({
+                defaultType: scope === "subscriptions" ? "SUBSCRIPTION" : undefined,
+              })
+            }
+            variant="brass"
+            className="h-7 w-7 sm:h-6 sm:w-6"
           >
-            {p.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mobile-page-header mobile-page-filter !z-20 flex gap-2 mb-6 overflow-x-auto">
-        {([
-          { key: "tous", label: "Tous" },
-          { key: "avenir", label: "À venir" },
-          { key: "retard", label: "En retard" },
-          { key: "faits", label: "Faits" },
-        ] as const).map((p) => (
-          <button
-            key={p.key}
-            onClick={() => setFilter(p.key)}
-            className={`px-3 py-1.5 text-xs rounded border ${
-              filter === p.key
-                ? "border-brass text-parchment bg-ink"
-                : "border-border-log text-muted"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
+            <PlusIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
+          </IconButton>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {([
+            { key: "tasks", label: "Ponctuels" },
+            { key: "subscriptions", label: "Abonnements" },
+          ] as const).map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setScope(p.key)}
+              className={`px-3 py-1.5 text-xs rounded border ${
+                scope === p.key
+                  ? "border-brass text-parchment bg-ink"
+                  : "border-border-log text-muted"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 mb-6 overflow-x-auto">
+          {([
+            { key: "tous", label: "Tous" },
+            { key: "avenir", label: "À venir" },
+            { key: "retard", label: "En retard" },
+            { key: "faits", label: "Faits" },
+          ] as const).map((p) => (
+            <button
+              key={p.key}
+              onClick={() => setFilter(p.key)}
+              className={`px-3 py-1.5 text-xs rounded border ${
+                filter === p.key
+                  ? "border-brass text-parchment bg-ink"
+                  : "border-border-log text-muted"
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!hasScope ? (

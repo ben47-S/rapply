@@ -102,10 +102,7 @@ body {
 }
 
 .mobile-page-root--filters {
-  padding-top: calc(
-    var(--mobile-header-height) + var(--mobile-page-title-height) +
-      (var(--mobile-page-subheader-height) * 2)
-  );
+  padding-top: calc(var(--mobile-header-height) + var(--mobile-page-title-height));
 }
 
 @media (min-width: 768px) {
