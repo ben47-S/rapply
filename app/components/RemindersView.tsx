@@ -257,6 +257,7 @@ function ReminderModal({
   );
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [itemLoadingId, setItemLoadingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const alive = useRef(true);
   useEffect(() => () => {
@@ -748,8 +749,8 @@ function ReminderModal({
                         <input
                           type="checkbox"
                           checked={item.checked}
-                          disabled={allChecked}
                           onChange={async () => {
+                            setItemLoadingId(item.id);
                             const res = await fetch(
                               `/api/reminders/${r.id}/items/${item.id}`,
                               {
@@ -762,9 +763,12 @@ function ReminderModal({
                               const updated: R = await res.json();
                               onSaved(updated);
                             }
+                            setItemLoadingId(null);
                           }}
+                          disabled={allChecked || itemLoadingId === item.id}
                           className="accent-brass"
                         />
+                        {itemLoadingId === item.id && <Spinner className="ml-1" />}
                         <span
                           className={`text-sm ${
                             item.checked ? "line-through text-muted" : ""

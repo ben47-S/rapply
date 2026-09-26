@@ -34,14 +34,17 @@ export function FinancesView({
   const [open, setOpen] = useState<{ tx?: Tx } | null>(null);
   const [period, setPeriod] = useState<"jour" | "mois" | "annee">("mois");
 
+  const [refreshing, setRefreshing] = useState(false);
   const refreshStats = async () => {
     try {
+      setRefreshing(true);
       const res = await fetch("/api/stats/finances");
       if (res.ok) {
         const data = await res.json();
         setStats(data);
       }
     } catch {}
+    finally { setRefreshing(false); }
   };
 
   const handleCategoryAdded = (c: Cat) => setCategories((prev) => [...prev, c]);
@@ -127,6 +130,7 @@ export function FinancesView({
             <h2 className="font-display text-lg text-parchment flex items-center gap-2">
               <ChartIcon className="w-4 h-4 text-brass" />
               Statistiques détaillées
+              {refreshing && <Spinner className="ml-1" />}
             </h2>
             <button
               onClick={() => setShowStats(false)}
