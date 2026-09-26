@@ -123,7 +123,7 @@ export default async function DashboardPage() {
         <h1 className="font-display text-2xl text-parchment">Tableau de bord</h1>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-12 sm:mb-14">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-14 sm:mb-16">
         {TICKETS.map((t) => (
           <div
             key={t.key}
