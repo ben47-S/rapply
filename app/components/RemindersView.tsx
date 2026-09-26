@@ -235,10 +235,11 @@ function ReminderModal({
   const [title, setTitle] = useState(r?.title ?? "");
   const [description, setDescription] = useState(r?.description ?? "");
   const [type, setType] = useState<string>(r?.type ?? defaultType ?? "TASK");
-  const dateLabel =
-    type === "SUBSCRIPTION" ? "Prochaine échéance" : "Date et heure du rappel";
-   const [dueDate, setDueDate] = useState(r ? dayjs(r.dueDate).format("YYYY-MM-DD") : "");
-   const [dueTime, setDueTime] = useState(r ? dayjs(r.dueDate).format("HH:mm") : "");
+   const dateLabel =
+     type === "SUBSCRIPTION" ? "Prochaine échéance" : "Date et heure du rappel";
+   const [due, setDue] = useState(
+     r ? dayjs(r.dueDate).format("YYYY-MM-DDTHH:mm") : ""
+   );
   const [estimatedAmount, setEstimatedAmount] = useState(
     r?.estimatedAmount != null ? String(Number(r.estimatedAmount)) : ""
   );
@@ -396,7 +397,7 @@ function ReminderModal({
   const submit = async () => {
     setError("");
     if (!title.trim()) return setError("Le titre est requis.");
-    if (!dueDate || !dueTime) return setError("La date est requise.");
+    if (!due) return setError("La date est requise.");
     setSaving(true);
     try {
       const amt = estimatedAmount ? parseFloat(String(estimatedAmount).replace(",", ".")) : undefined;
@@ -404,7 +405,7 @@ function ReminderModal({
         title: title.trim(),
         description: description || undefined,
         type,
-        dueDate: new Date(`${dueDate}T${dueTime}`).toISOString(),
+        dueDate: new Date(due).toISOString(),
         estimatedAmount: amt && !isNaN(amt) && amt > 0 ? amt : null,
         categoryId: categoryId || null,
         isRecurring,
@@ -460,7 +461,7 @@ function ReminderModal({
     }
   };
 
-  const canSave = title.trim().length > 0 && !!dueDate && !!dueTime;
+  const canSave = title.trim().length > 0 && !!due;
 
   return (
     <div
@@ -520,25 +521,14 @@ function ReminderModal({
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs text-muted mb-1">Date</label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="block w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-muted mb-1">Heure</label>
-                <input
-                  type="time"
-                  value={dueTime}
-                  onChange={(e) => setDueTime(e.target.value)}
-                  className="block w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
-                />
-              </div>
+            <div>
+              <label className="block text-xs text-muted mb-1">{dateLabel}</label>
+              <input
+                type="datetime-local"
+                value={due}
+                onChange={(e) => setDue(e.target.value)}
+                className="block w-full min-w-0 max-w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+              />
             </div>
 
             <div>
