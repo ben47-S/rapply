@@ -1,4 +1,6 @@
 import { serverFetch } from "@/app/lib/server-fetch";
+import { PageLayout } from "@/app/components/PageLayout";
+import { DashboardBudgets } from "@/app/components/DashboardBudgets";
 import Link from "next/link";
 import dayjs from "@/app/lib/dayjs";
 
@@ -40,20 +42,13 @@ function spentFor(b: any, transactions: any[]): number {
     .reduce((s: number, t: any) => s + Number(t.amount), 0);
 }
 
-function barColor(pct: number): string {
-  if (pct >= 100) return "bg-rust";
-  if (pct >= 95) return "bg-amber";
-  if (pct >= 80) return "bg-brass";
-  return "bg-teal-log";
-}
-
 export default async function DashboardPage() {
   const now = dayjs();
   const todayDow = DOW[now.day()];
   const startOfToday = now.startOf("day");
   const endOfToday = now.endOf("day");
 
-  const [user, stats, transactions, budgets, categories, reminders, notes, schedule] =
+  const [user, stats, transactions, budgets, reminders, notes, schedule] =
     await Promise.all([
       safe(serverFetch("/api/user"), { currency: "XOF" }),
       safe(serverFetch("/api/stats"), {
@@ -63,9 +58,8 @@ export default async function DashboardPage() {
         totalActive: 0,
       }),
       safe(serverFetch("/api/transactions"), []),
-      safe(serverFetch("/api/budgets"), []),
-      safe(serverFetch("/api/categories"), []),
-      safe(serverFetch("/api/reminders"), []),
+       safe(serverFetch("/api/budgets"), []),
+       safe(serverFetch("/api/reminders"), []),
       safe(serverFetch("/api/notes"), []),
       safe(serverFetch("/api/schedule"), []),
     ]);
@@ -73,7 +67,6 @@ export default async function DashboardPage() {
   const currency = (user as any).currency ?? "XOF";
   const txs = transactions as any[];
   const bgs = budgets as any[];
-  const cats = categories as any[];
   const rms = reminders as any[];
   const nts = notes as any[];
 
@@ -118,11 +111,7 @@ export default async function DashboardPage() {
   const recentNotes = nts.slice(0, 3);
 
   return (
-    <div className="mobile-page-root">
-      <div className="mobile-page-header flex items-start justify-between gap-4 mb-5">
-        <h1 className="font-display text-2xl text-parchment">Tableau de bord</h1>
-      </div>
-
+    <PageLayout title="Tableau de bord">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-12 sm:mb-12 md:mb-6 overflow-x-auto">
         {TICKETS.map((t) => (
           <div
@@ -173,47 +162,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display text-lg text-parchment">Budgets en alerte</h2>
-          <Link href="/budgets" className="text-xs text-brass hover:underline">
-            Tout voir
-          </Link>
-        </div>
-        {alerts.length === 0 ? (
-          <p className="text-sm text-muted">Aucun budget en alerte (≥ 80 %).</p>
-        ) : (
-          <div className="space-y-3">
-            {alerts.map(({ b, spent, amount, pct }) => {
-              const cat = b.categoryId
-                ? cats.find((c: any) => c.id === b.categoryId)
-                : null;
-              return (
-                <Link
-                  key={b.id}
-                  href="/budgets"
-                  className="block bg-surface border border-border-log rounded-md px-4 py-3 hover:border-brass"
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm text-parchment truncate">
-                      {cat ? cat.name : "Global"}
-                    </p>
-                    <p className={`font-mono-log text-sm ${pct >= 100 ? "text-rust" : "text-muted"}`}>
-                      {spent.toLocaleString("fr-FR")} / {amount.toLocaleString("fr-FR")} {currency}
-                    </p>
-                  </div>
-                  <div className="h-2 rounded-full bg-ink overflow-hidden">
-                    <div
-                      className={`h-full ${barColor(pct)}`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <DashboardBudgets alerts={alerts} currency={currency} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 mb-6">
         <section>
@@ -322,6 +271,6 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
-    </div>
+    </PageLayout>
   );
 }
