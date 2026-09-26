@@ -235,8 +235,8 @@ function ReminderModal({
   const [title, setTitle] = useState(r?.title ?? "");
   const [description, setDescription] = useState(r?.description ?? "");
   const [type, setType] = useState<string>(r?.type ?? defaultType ?? "TASK");
-  const dateLabel =
-    type === "SUBSCRIPTION" ? "Prochaine échéance" : "Date et heure du rappel";
+   const dateLabel =
+     type === "SUBSCRIPTION" ? "Prochaine échéance" : "Date du rappel";
    const [dueDate, setDueDate] = useState(r ? dayjs(r.dueDate).format("YYYY-MM-DD") : "");
    const [dueTime, setDueTime] = useState(r ? dayjs(r.dueDate).format("HH:mm") : "");
   const [estimatedAmount, setEstimatedAmount] = useState(
@@ -520,25 +520,23 @@ function ReminderModal({
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="block text-xs text-muted mb-1">Date</label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="block w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-muted mb-1">Heure</label>
-                <input
-                  type="time"
-                  value={dueTime}
-                  onChange={(e) => setDueTime(e.target.value)}
-                  className="block w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
-                />
-              </div>
+            <div>
+              <label className="block text-xs text-muted mb-1">Date</label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="block w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted mb-1">Heure</label>
+              <input
+                type="time"
+                value={dueTime}
+                onChange={(e) => setDueTime(e.target.value)}
+                className="block w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+              />
             </div>
 
             <div>
