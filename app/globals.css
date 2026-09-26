@@ -68,13 +68,14 @@ body {
   left: 0;
   right: 0;
   z-index: 40;
-  height: var(--mobile-page-title-height);
+  min-height: var(--mobile-page-title-height);
   margin-inline: 0;
   margin-bottom: 0;
   padding: 0.75rem 1rem calc(0.05rem + 3px);
   background: var(--color-ink);
   box-shadow: none;
   isolation: isolate;
+  box-sizing: border-box;
 }
 
 .mobile-page-subheader {
