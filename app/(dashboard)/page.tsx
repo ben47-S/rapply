@@ -119,11 +119,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="mobile-page-root">
-      <div className="mobile-page-header flex items-start justify-between gap-4 mb-8">
+      <div className="mobile-page-header flex items-start justify-between gap-4 mb-5">
         <h1 className="font-display text-2xl text-parchment">Tableau de bord</h1>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-20 sm:mb-24 md:mb-10 overflow-x-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-12 sm:mb-12 md:mb-6 overflow-x-auto">
         {TICKETS.map((t) => (
           <div
             key={t.key}
@@ -139,7 +139,7 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <section className="mb-10">
+      <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg text-parchment">Finances du mois</h2>
           <Link href="/finances" className="text-xs text-brass hover:underline">
@@ -173,7 +173,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <section className="mb-10">
+      <section className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-display text-lg text-parchment">Budgets en alerte</h2>
           <Link href="/budgets" className="text-xs text-brass hover:underline">
@@ -215,7 +215,7 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-6 mb-6">
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-lg text-parchment">Aujourd&apos;hui</h2>
@@ -223,7 +223,7 @@ export default async function DashboardPage() {
               Planning
             </Link>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div>
               <p className="text-[11px] uppercase tracking-widest text-muted mb-2">Planning</p>
               {todaySchedule.length === 0 ? (
