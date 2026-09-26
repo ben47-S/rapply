@@ -109,9 +109,12 @@ body {
 @media (min-width: 768px) {
   .mobile-page-header {
     height: auto;
-    left: auto;
-    right: auto;
-    padding: 0;
+    top: 0;
+    left: 224px;
+    right: 0;
+    padding: 1rem 1rem 0 1rem;
+    display: flex;
+    align-items: center;
   }
 
   .mobile-page-subheader,
@@ -123,7 +126,7 @@ body {
   .mobile-page-root,
   .mobile-page-root--search,
   .mobile-page-root--filters {
-    padding-top: calc(var(--mobile-header-height) + var(--mobile-page-title-height));
+    padding-top: calc(var(--mobile-page-title-height) + 0.25rem);
   }
 }
 
