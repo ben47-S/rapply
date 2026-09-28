@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { IconButton, PlusIcon } from "@/app/components/IconButton";
+import { PageLayout } from "@/app/components/PageLayout";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { reminderSummary } from "@/app/lib/recurrence";
 
 function Spinner({ className = "" }: { className?: string }) {
@@ -45,9 +47,10 @@ export function NotesView({ notes: initial, reminders }: { notes: N[]; reminders
   };
 
   return (
-    <div className="mobile-page-root mobile-page-root--search">
-      <div className="mobile-page-header flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl text-parchment">Notes</h1>
+    <PageLayout
+      title="Notes"
+      variant="search"
+      actions={
         <IconButton
           ariaLabel="Ajouter une note"
           onClick={() => setOpen({})}
@@ -56,16 +59,16 @@ export function NotesView({ notes: initial, reminders }: { notes: N[]; reminders
         >
           <PlusIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
         </IconButton>
-      </div>
-
-      <div className="mobile-page-header mobile-page-subheader !z-30">
+      }
+      subheader={
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher une note…"
           className="w-full rounded border border-border-log bg-ink px-3 py-2 text-sm outline-none focus:border-brass"
         />
-      </div>
+      }
+    >
 
       {notes.length === 0 ? (
         <p className="text-sm text-muted mb-4">Aucune note pour le moment.</p>
@@ -109,7 +112,7 @@ export function NotesView({ notes: initial, reminders }: { notes: N[]; reminders
           onSaved={handleSaved}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }
 
@@ -132,11 +135,15 @@ function NoteModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const alive = useRef(true);
-  useEffect(() => () => {
-    alive.current = false;
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
   }, []);
 
   const [editing, setEditing] = useState(isNew === true);
+  const [confirming, setConfirming] = useState(false);
 
   const submit = async () => {
     setError("");
@@ -175,6 +182,8 @@ function NoteModal({
 
   const remove = async () => {
     if (!n) return;
+    if (!confirming) return setConfirming(true);
+    setConfirming(false);
     setDeleting(true);
     try {
       const res = await fetch(`/api/notes/${n.id}`, { method: "DELETE" });
@@ -187,10 +196,11 @@ function NoteModal({
   const canSave = title.trim().length > 0 && content.trim().length > 0;
 
   return (
-    <div
-      className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
-      onClick={onClose}
-    >
+    <>
+      <div
+        className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+        onClick={onClose}
+      >
       <div
         className="pwa-sheet w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-lg bg-surface border-0 sm:border border-border-log p-4 text-parchment"
         onClick={(e) => e.stopPropagation()}
@@ -343,5 +353,14 @@ function NoteModal({
         </div>
       </div>
     </div>
+    {confirming && (
+      <ConfirmDialog
+        title="Supprimer la note ?"
+        message="Cette action est définitive."
+        onCancel={() => setConfirming(false)}
+        onConfirm={remove}
+      />
+    )}
+    </>
   );
 }

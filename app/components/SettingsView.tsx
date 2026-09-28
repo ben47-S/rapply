@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CURRENCIES, CURRENCY_LABELS } from "@/app/lib/currencies";
 import { BackButton, DownloadIcon } from "@/app/components/IconButton";
 import { PushSubscribeButton } from "@/app/components/PushSubscribeButton";
+import { PageLayout } from "@/app/components/PageLayout";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -43,8 +44,11 @@ export function SettingsView({
   const [newCatSaving, setNewCatSaving] = useState(false);
   const [newCatError, setNewCatError] = useState("");
   const alive = useRef(true);
-  useEffect(() => () => {
-    alive.current = false;
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
   }, []);
 
   const createCategory = async (type: "EXPENSE" | "INCOME") => {
@@ -159,12 +163,7 @@ export function SettingsView({
   };
 
   return (
-    <div className="mobile-page-root">
-      <div className="mobile-page-header flex items-center gap-3 mb-6">
-        <BackButton />
-        <h1 className="font-display text-2xl text-parchment">Paramètres</h1>
-      </div>
-
+    <PageLayout title="Paramètres" leading={<BackButton />}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-md lg:max-w-none">
         <div className="bg-surface border border-border-log rounded-md px-4 py-5">
           <p className="text-[11px] uppercase tracking-widest text-muted mb-1">
@@ -410,6 +409,6 @@ export function SettingsView({
           Déconnecter tous les appareils
         </button>
       </div>
-    </div>
+    </PageLayout>
   );
 }

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dayjs from "@/app/lib/dayjs";
 import { BackButton, IconButton, PlusIcon } from "@/app/components/IconButton";
+import { PageLayout } from "@/app/components/PageLayout";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -43,25 +46,14 @@ const UNITS = [
 
 const onlyDigits = (v: string) => v.replace(/[^\d]/g, "");
 
-const onlyDecimal = (v: string) => {
-  const cleaned = v.replace(/[^\d.]/g, "");
-  const firstDot = cleaned.indexOf(".");
-  return firstDot === -1
-    ? cleaned
-    : cleaned.slice(0, firstDot + 1) + cleaned.slice(firstDot + 1).replace(/\./g, "");
-};
+const parseDecimal = (v: unknown): number =>
+  v === "" || v == null ? NaN : parseFloat(String(v).replace(",", "."));
 
 const isModKey = (e: React.KeyboardEvent) =>
   e.ctrlKey || e.metaKey || e.altKey;
 
 const blockNonDigitKey = (e: React.KeyboardEvent) => {
   if (e.key.length === 1 && !/[\d]/.test(e.key) && !isModKey(e)) {
-    e.preventDefault();
-  }
-};
-
-const blockNonDecimalKey = (e: React.KeyboardEvent) => {
-  if (e.key.length === 1 && !/[\d.]/.test(e.key) && !isModKey(e)) {
     e.preventDefault();
   }
 };
@@ -102,12 +94,11 @@ export function RecipesView({
   };
 
   return (
-    <div className="mobile-page-root mobile-page-root--search">
-      <div className="mobile-page-header flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <BackButton />
-          <h1 className="font-display text-2xl text-parchment">Recettes</h1>
-        </div>
+    <PageLayout
+      title="Recettes"
+      variant="search"
+      leading={<BackButton />}
+      actions={
         <IconButton
           ariaLabel="Ajouter une recette"
           onClick={() => setOpen({})}
@@ -116,16 +107,16 @@ export function RecipesView({
         >
           <PlusIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
         </IconButton>
-      </div>
-
-      <div className="mobile-page-header mobile-page-subheader !z-30">
+      }
+      subheader={
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Rechercher une recette…"
           className="w-full rounded border border-border-log bg-ink px-3 py-2 text-sm outline-none focus:border-brass"
         />
-      </div>
+      }
+    >
 
       {recipes.length === 0 ? (
         <p className="text-sm text-muted mb-4">Aucune recette pour le moment.</p>
@@ -219,7 +210,7 @@ export function RecipesView({
           onSaved={handleSaved}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }
 
@@ -260,6 +251,7 @@ function RecipeModal({
   const [deleting, setDeleting] = useState(false);
   const [shoppingSaving, setShoppingSaving] = useState(false);
   const [shoppingCreated, setShoppingCreated] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -306,6 +298,10 @@ function RecipeModal({
       return setError("Chaque étape doit avoir un texte.");
     if (accessories.some((a) => !a.name.trim()))
       return setError("Chaque accessoire doit avoir un nom.");
+    if (parseDecimal(estimatedCost) < 0)
+      return setError("Le coût estimé ne peut pas être négatif.");
+    if (ingredients.some((ig) => parseDecimal(ig.quantity) < 0))
+      return setError("Une quantité ne peut pas être négative.");
     setSaving(true);
     try {
       const payload: any = {
@@ -315,11 +311,11 @@ function RecipeModal({
         prepTime: prepTime ? Number(prepTime) : undefined,
         cookTime: cookTime ? Number(cookTime) : undefined,
         difficulty: difficulty || undefined,
-        estimatedCost: estimatedCost ? Number(estimatedCost) : undefined,
+        estimatedCost: estimatedCost ? parseDecimal(estimatedCost) : undefined,
         ingredients: ingredients.map((ig) => ({
           id: ig.id || undefined,
           name: ig.name.trim(),
-          quantity: ig.quantity === "" || ig.quantity == null ? null : Number(ig.quantity),
+          quantity: ig.quantity === "" || ig.quantity == null ? null : parseDecimal(ig.quantity),
           unit: ig.unit?.trim() || null,
         })),
         steps: steps.map((s) => ({
@@ -362,6 +358,8 @@ function RecipeModal({
 
   const remove = async () => {
     if (!r) return;
+    if (!confirming) return setConfirming(true);
+    setConfirming(false);
     setDeleting(true);
     try {
       const res = await fetch(`/api/recipes/${r.id}`, { method: "DELETE" });
@@ -395,10 +393,11 @@ function RecipeModal({
     "rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass";
 
   return (
-    <div
-      className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
-      onClick={onClose}
-    >
+    <>
+      <div
+        className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+        onClick={onClose}
+      >
       <div
         className="pwa-sheet w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-lg bg-surface border-0 sm:border border-border-log p-4 text-parchment"
         onClick={(e) => e.stopPropagation()}
@@ -655,11 +654,12 @@ function RecipeModal({
                 Coût estimé (optionnel)
               </label>
               <input
+                type="number"
+                step="0.01"
+                min="0"
                 value={estimatedCost}
-                inputMode="decimal"
                 placeholder="ex. 4500"
-                onKeyDown={blockNonDecimalKey}
-                onChange={(e) => setEstimatedCost(onlyDecimal(e.target.value))}
+                onChange={(e) => setEstimatedCost(e.target.value)}
                 className={`${inputCls} w-full`}
               />
             </div>
@@ -702,12 +702,13 @@ function RecipeModal({
                   </div>
                   <div className="flex gap-2">
                     <input
+                      type="number"
+                      step="0.01"
+                      min="0"
                       value={ig.quantity ?? ""}
-                      inputMode="decimal"
                       placeholder="Qté"
-                      onKeyDown={blockNonDecimalKey}
                       onChange={(e) =>
-                        updateIngredient(idx, { quantity: onlyDecimal(e.target.value) })
+                        updateIngredient(idx, { quantity: e.target.value })
                       }
                       className={`${inputCls} w-24 shrink-0`}
                     />
@@ -867,5 +868,14 @@ function RecipeModal({
         )}
       </div>
     </div>
+    {confirming && (
+      <ConfirmDialog
+        title="Supprimer la recette ?"
+        message="Cette action est définitive."
+        onCancel={() => setConfirming(false)}
+        onConfirm={remove}
+      />
+    )}
+    </>
   );
 }

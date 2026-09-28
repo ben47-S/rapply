@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import dayjs from "@/app/lib/dayjs";
 import { ScheduleToolbar } from "@/app/components/ScheduleToolbar";
 import { IconButton, PlusIcon } from "@/app/components/IconButton";
+import { PageLayout } from "@/app/components/PageLayout";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import {
   dayEventsFor,
   buildSegments,
@@ -157,21 +159,21 @@ export function ScheduleView({
   const close = () => setModal({ open: false, editing: null });
 
   return (
-    <div className="mobile-page-root">
-      <div className="mobile-page-header flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-5">
-          <h1 className="font-display text-2xl text-parchment">Planning</h1>
-          <IconButton
-            ariaLabel="Ajouter un événement"
-            onClick={() => openNew()}
-            variant="ghost"
-            className="h-6 w-6 border border-border-log"
-          >
-            <PlusIcon className="w-3 h-3" />
-          </IconButton>
-        </div>
-        <ScheduleToolbar week={week} days={days} />
-      </div>
+    <PageLayout
+      title="Planning"
+      variant="responsive-tools"
+      titleActions={
+        <IconButton
+          ariaLabel="Ajouter un événement"
+          onClick={() => openNew()}
+          variant="ghost"
+          className="h-6 w-6 border border-border-log"
+        >
+          <PlusIcon className="w-3 h-3" />
+        </IconButton>
+      }
+      actions={<ScheduleToolbar week={week} days={days} />}
+    >
 
       <p className="text-sm text-muted mb-4">
         Du {rangeStartLabel} au {rangeEndLabel}
@@ -251,7 +253,7 @@ export function ScheduleView({
           }}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }
 
@@ -340,7 +342,12 @@ function EventModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const alive = useRef(true);
-  useEffect(() => () => { alive.current = false; }, []);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
 
   const submit = async () => {
     setError("");
@@ -407,6 +414,8 @@ function EventModal({
 
   const remove = async () => {
     if (event.__new) return;
+    if (!confirming) return setConfirming(true);
+    setConfirming(false);
     setDeleting(true);
     try {
       const res = await fetch(`/api/schedule/${event.id}`, { method: "DELETE" });
@@ -423,12 +432,14 @@ function EventModal({
     (mode !== "ponctuel" || !!specificDate);
 
   const [editing, setEditing] = useState(event.__new === true);
+  const [confirming, setConfirming] = useState(false);
 
   return (
-    <div
-      className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
-      onClick={onClose}
-    >
+    <>
+      <div
+        className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+        onClick={onClose}
+      >
       <div
         className="pwa-sheet w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-lg bg-surface border-0 sm:border border-border-log p-4 text-parchment"
         onClick={(e) => e.stopPropagation()}
@@ -659,5 +670,14 @@ function EventModal({
         </div>
       </div>
     </div>
+    {confirming && (
+      <ConfirmDialog
+        title="Supprimer l'événement ?"
+        message="Cette action est définitive."
+        onCancel={() => setConfirming(false)}
+        onConfirm={remove}
+      />
+    )}
+    </>
   );
 }

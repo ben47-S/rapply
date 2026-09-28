@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import dayjs from "@/app/lib/dayjs";
 import { IconButton, PlusIcon, BudgetIcon, ChartIcon } from "@/app/components/IconButton";
+import { PageLayout } from "@/app/components/PageLayout";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 
 function Spinner({ className = "" }: { className?: string }) {
   return (
@@ -93,10 +95,10 @@ export function FinancesView({
   };
 
   return (
-    <div className="mobile-page-root">
-      <div className="mobile-page-header flex items-center justify-between mb-6">
-        <h1 className="font-display text-2xl text-parchment">Finances</h1>
-        <div className="flex items-center gap-2">
+    <PageLayout
+      title="Finances"
+      actions={
+        <>
           <IconButton
             ariaLabel={showStats ? "Masquer les statistiques" : "Statistiques détaillées"}
             onClick={() => setShowStats((s) => !s)}
@@ -121,12 +123,13 @@ export function FinancesView({
           >
             <PlusIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
           </IconButton>
-        </div>
-      </div>
+        </>
+      }
+    >
 
       {showStats && stats && (
         <div className="mb-10 space-y-6">
-          <div className="flex items-center justify-between pb-2 border-b border-border-log">
+          <div className="finances-stats-header flex items-center justify-between pb-2 border-b border-border-log">
             <h2 className="font-display text-lg text-parchment flex items-center gap-2">
               <ChartIcon className="w-4 h-4 text-brass" />
               Statistiques détaillées
@@ -379,7 +382,7 @@ export function FinancesView({
           onCategoryAdded={handleCategoryAdded}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }
 
@@ -415,8 +418,11 @@ function TransactionModal({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const alive = useRef(true);
-  useEffect(() => () => {
-    alive.current = false;
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
   }, []);
 
   const catOptions = categories.filter((c: Cat) => c.type === type);
@@ -495,6 +501,8 @@ function TransactionModal({
 
   const remove = async () => {
     if (!tx) return;
+    if (!confirming) return setConfirming(true);
+    setConfirming(false);
     setDeleting(true);
     try {
       const res = await fetch(`/api/transactions/${tx.id}`, { method: "DELETE" });
@@ -508,12 +516,14 @@ function TransactionModal({
     parseFloat(String(amount).replace(",", ".")) > 0;
 
   const [editing, setEditing] = useState(isNew === true);
+  const [confirming, setConfirming] = useState(false);
 
   return (
-    <div
-      className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
-      onClick={onClose}
-    >
+    <>
+      <div
+        className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+        onClick={onClose}
+      >
       <div
         className="pwa-sheet w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-lg bg-surface border-0 sm:border border-border-log p-4 text-parchment"
         onClick={(e) => e.stopPropagation()}
@@ -749,5 +759,14 @@ function TransactionModal({
         </div>
       </div>
     </div>
+    {confirming && (
+      <ConfirmDialog
+        title="Supprimer la transaction ?"
+        message="Cette action est définitive."
+        onCancel={() => setConfirming(false)}
+        onConfirm={remove}
+      />
+    )}
+    </>
   );
 }

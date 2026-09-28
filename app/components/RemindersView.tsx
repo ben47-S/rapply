@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import dayjs from "@/app/lib/dayjs";
 import { IconButton, PlusIcon } from "@/app/components/IconButton";
+import { PageLayout } from "@/app/components/PageLayout";
+import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { StatusStamp } from "@/app/components/StatusStamp";
 import { TYPE_LABELS, FREQ_LABELS, derivedStatus, nextDue } from "@/app/lib/recurrence";
 
@@ -86,62 +88,66 @@ export function RemindersView({
     .sort((a, b) => dayjs(a.dueDate).valueOf() - dayjs(b.dueDate).valueOf());
 
   return (
-    <div className="mobile-page-root mobile-page-root--filters">
-      <div className="mobile-page-header flex flex-col">
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-2xl text-parchment">Rappels</h1>
-          <IconButton
-            ariaLabel="Ajouter un rappel"
-            onClick={() =>
-              setOpen({
-                defaultType: scope === "subscriptions" ? "SUBSCRIPTION" : undefined,
-              })
-            }
-            variant="brass"
-            className="h-7 w-7 sm:h-6 sm:w-6"
-          >
-            <PlusIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
-          </IconButton>
-        </div>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {([
-            { key: "tasks", label: "Ponctuels" },
-            { key: "subscriptions", label: "Abonnements" },
-          ] as const).map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setScope(p.key)}
-              className={`px-3 py-1.5 text-xs rounded border ${
-                scope === p.key
-                  ? "border-brass text-parchment bg-ink"
-                  : "border-border-log text-muted"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {([
-            { key: "tous", label: "Tous" },
-            { key: "avenir", label: "À venir" },
-            { key: "retard", label: "En retard" },
-            { key: "faits", label: "Faits" },
-          ] as const).map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setFilter(p.key)}
-              className={`px-3 py-1.5 text-xs rounded border ${
-                filter === p.key
-                  ? "border-brass text-parchment bg-ink"
-                  : "border-border-log text-muted"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
-      </div>
+    <PageLayout
+      title="Rappels"
+      variant="filters"
+      actions={
+        <IconButton
+          ariaLabel="Ajouter un rappel"
+          onClick={() =>
+            setOpen({
+              defaultType: scope === "subscriptions" ? "SUBSCRIPTION" : undefined,
+            })
+          }
+          variant="brass"
+          className="h-7 w-7 sm:h-6 sm:w-6"
+        >
+          <PlusIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
+        </IconButton>
+      }
+      controls={
+        <>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {([
+              { key: "tasks", label: "Ponctuels" },
+              { key: "subscriptions", label: "Abonnements" },
+            ] as const).map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setScope(p.key)}
+                className={`px-3 py-1.5 text-xs rounded border ${
+                  scope === p.key
+                    ? "border-brass text-parchment bg-ink"
+                    : "border-border-log text-muted"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-2 mb-6 overflow-x-auto">
+            {([
+              { key: "tous", label: "Tous" },
+              { key: "avenir", label: "À venir" },
+              { key: "retard", label: "En retard" },
+              { key: "faits", label: "Faits" },
+            ] as const).map((p) => (
+              <button
+                key={p.key}
+                onClick={() => setFilter(p.key)}
+                className={`px-3 py-1.5 text-xs rounded border ${
+                  filter === p.key
+                    ? "border-brass text-parchment bg-ink"
+                    : "border-border-log text-muted"
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </>
+      }
+    >
 
       {!hasScope ? (
         <p className="text-sm text-muted mb-4">
@@ -209,7 +215,7 @@ export function RemindersView({
           onSaved={handleSaved}
         />
       )}
-    </div>
+    </PageLayout>
   );
 }
 
@@ -260,8 +266,11 @@ function ReminderModal({
   const [itemLoadingId, setItemLoadingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const alive = useRef(true);
-  useEffect(() => () => {
-    alive.current = false;
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
   }, []);
 
   const [hasChecklist, setHasChecklist] = useState(
@@ -276,6 +285,7 @@ function ReminderModal({
     setChecklistItems((l) => l.filter((_, i) => i !== idx));
 
   const [editing, setEditing] = useState(isNew === true);
+  const [confirming, setConfirming] = useState(false);
 
   const toggleStatus = async () => {
     if (!r) return;
@@ -452,6 +462,8 @@ function ReminderModal({
 
   const remove = async () => {
     if (!r) return;
+    if (!confirming) return setConfirming(true);
+    setConfirming(false);
     setDeleting(true);
     try {
       const res = await fetch(`/api/reminders/${r.id}`, { method: "DELETE" });
@@ -464,10 +476,11 @@ function ReminderModal({
   const canSave = title.trim().length > 0 && !!due;
 
   return (
-    <div
-      className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
-      onClick={onClose}
-    >
+    <>
+      <div
+        className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+        onClick={onClose}
+      >
       <div
         className="pwa-sheet w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-lg bg-surface border-0 sm:border border-border-log p-4 text-parchment"
         onClick={(e) => e.stopPropagation()}
@@ -878,5 +891,14 @@ function ReminderModal({
         </div>
       </div>
     </div>
+    {confirming && (
+      <ConfirmDialog
+        title="Supprimer le rappel ?"
+        message="Cette action est définitive."
+        onCancel={() => setConfirming(false)}
+        onConfirm={remove}
+      />
+    )}
+    </>
   );
 }
