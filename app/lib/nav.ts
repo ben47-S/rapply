@@ -2,15 +2,17 @@
 // lisaient chacun leur propre liste et dupliquaient `isActive`, ce qui a laissé
 // /budgets hors de la nav alors que la page existe.
 
-export type NavLink = { href: string; label: string };
+export type NavIcon = "home" | "bell" | "note" | "wallet" | "budget" | "calendar";
+
+export type NavLink = { href: string; label: string; icon?: NavIcon };
 
 export const NAV: NavLink[] = [
-  { href: "/", label: "Accueil" },
-  { href: "/reminders", label: "Rappels" },
-  { href: "/notes", label: "Notes" },
-  { href: "/finances", label: "Finances" },
-  { href: "/budgets", label: "Budgets" },
-  { href: "/schedule", label: "Planning" },
+  { href: "/", label: "Accueil", icon: "home" },
+  { href: "/reminders", label: "Rappels", icon: "bell" },
+  { href: "/notes", label: "Notes", icon: "note" },
+  { href: "/finances", label: "Finances", icon: "wallet" },
+  { href: "/budgets", label: "Budgets", icon: "budget" },
+  { href: "/schedule", label: "Planning", icon: "calendar" },
 ];
 
 // /recettes et /parametres vivent hors du groupe (dashboard) : pas de sidebar ni

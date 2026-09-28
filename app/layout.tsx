@@ -1,4 +1,5 @@
 import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
+import { ConnectionBubble } from "@/app/components/ConnectionBubble";
 import { InitialLoading } from "@/app/components/InitialLoading";
 import "./globals.css";
 
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="fr" className={`${fraunces.variable} ${plexMono.variable} ${inter.variable}`}>
       <body className="font-sans antialiased">
         <InitialLoading />
+        <ConnectionBubble />
         {children}
       </body>
     </html>

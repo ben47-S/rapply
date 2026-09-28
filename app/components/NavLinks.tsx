@@ -3,7 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BurgerMenu } from "@/app/components/BurgerMenu";
-import { NAV, isActive } from "@/app/lib/nav";
+import {
+  BellIcon,
+  BudgetIcon,
+  CalendarIcon,
+  HomeIcon,
+  NoteIcon,
+  WalletIcon,
+} from "@/app/components/IconButton";
+import { NAV, isActive, type NavIcon } from "@/app/lib/nav";
+
+const NAV_ICONS: Record<NavIcon, (props: { className?: string }) => React.ReactElement> = {
+  home: HomeIcon,
+  bell: BellIcon,
+  note: NoteIcon,
+  wallet: WalletIcon,
+  budget: BudgetIcon,
+  calendar: CalendarIcon,
+};
 
 export function NavLinks({ variant }: { variant: "sidebar" | "bottom" }) {
   const pathname = usePathname();
@@ -41,15 +58,22 @@ export function NavLinks({ variant }: { variant: "sidebar" | "bottom" }) {
     <>
       {NAV.map((item) => {
         const active = isActive(pathname, item.href);
+        const Icon = item.icon ? NAV_ICONS[item.icon] : null;
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 truncate px-1 py-4 text-center text-xs leading-tight transition-colors ${
+            aria-label={item.label}
+            aria-current={active ? "page" : undefined}
+            className={`flex flex-1 flex-col items-center justify-center py-3.5 transition-colors ${
               active ? "text-parchment" : "text-muted hover:text-parchment"
             }`}
           >
-            {item.label}
+            {Icon ? (
+              <Icon className="w-[22px] h-[22px]" />
+            ) : (
+              <span className="text-xs">{item.label}</span>
+            )}
           </Link>
         );
       })}

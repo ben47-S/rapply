@@ -23,6 +23,10 @@
   --mobile-page-subheader-height: 3.25rem;
 }
 
+html {
+  overscroll-behavior-y: contain;
+}
+
 body {
   background: var(--color-ink);
   color: var(--color-parchment);
@@ -53,6 +57,120 @@ body {
 
 .pwa-sheet {
   max-height: min(90vh, calc(100dvh - 1rem));
+}
+
+.pull-to-refresh {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 45;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--color-border-log);
+  border-radius: 9999px;
+  background: var(--color-surface-raised);
+  color: var(--color-brass);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.pull-to-refresh--visible {
+  visibility: visible;
+}
+
+.pull-to-refresh__arrow {
+  width: 1rem;
+  height: 1rem;
+}
+
+.pull-to-refresh__spinner {
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 2px solid var(--color-border-log);
+  border-top-color: var(--color-brass);
+  border-radius: 9999px;
+  animation: pull-to-refresh-spin 0.7s linear infinite;
+}
+
+.connection-bubble {
+  position: fixed;
+  top: calc(var(--mobile-header-height) + 0.5rem);
+  right: 0.75rem;
+  z-index: 80;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid var(--color-border-log);
+  border-radius: 9999px;
+  background: var(--color-surface-raised);
+  pointer-events: none;
+  animation: connection-bubble-in 0.24s ease-out;
+}
+
+.connection-bubble--online {
+  border-color: var(--color-teal-log);
+}
+
+.connection-bubble--offline {
+  border-color: var(--color-rust);
+  animation:
+    connection-bubble-in 0.24s ease-out,
+    connection-bubble-pulse 1.8s ease-in-out infinite;
+}
+
+.connection-bubble__dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 9999px;
+  background: var(--color-teal-log);
+}
+
+.connection-bubble--offline .connection-bubble__dot {
+  background: var(--color-rust);
+}
+
+.connection-bubble__slash {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.5rem;
+  height: 2px;
+  background: var(--color-rust);
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+@keyframes connection-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes connection-bubble-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes pull-to-refresh-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .mobile-app-header {
@@ -203,9 +321,25 @@ body {
   }
 }
 
+@media (min-width: 768px) {
+  .connection-bubble {
+    top: 0.75rem;
+    right: 1.25rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .initial-loading,
   .initial-loading__logo {
+    animation: none;
+  }
+
+  .pull-to-refresh__spinner {
+    animation-duration: 1.6s;
+  }
+
+  .connection-bubble,
+  .connection-bubble--offline {
     animation: none;
   }
 }

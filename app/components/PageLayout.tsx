@@ -1,4 +1,8 @@
+"use client";
+
 import type { ReactNode } from "react";
+
+import { PullToRefresh } from "@/app/components/PullToRefresh";
 
 type PageLayoutVariant = "standard" | "search" | "filters" | "responsive-tools";
 
@@ -11,6 +15,7 @@ type PageLayoutProps = {
   controls?: ReactNode;
   subheader?: ReactNode;
   variant?: PageLayoutVariant;
+  refreshable?: boolean;
 };
 
 export function PageLayout({
@@ -22,6 +27,7 @@ export function PageLayout({
   controls,
   subheader,
   variant = "standard",
+  refreshable = true,
 }: PageLayoutProps) {
   const rootClass = [
     "mobile-page-root",
@@ -66,7 +72,7 @@ export function PageLayout({
         </div>
       )}
 
-      {children}
+      <PullToRefresh enabled={refreshable}>{children}</PullToRefresh>
     </div>
   );
 }
