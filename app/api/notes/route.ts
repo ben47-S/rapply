@@ -3,11 +3,15 @@ import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
 import { z } from "zod";
 
-const noteSchema = z.object({
+const noteShape = {
   title: z.string().min(1),
   content: z.string().min(1),
   reminderId: z.string().optional(),
-});
+};
+
+const noteSchema = z.object(noteShape);
+
+export const notePatchSchema = z.object(noteShape).partial();
 
 // GET /api/notes
 export async function GET(req: NextRequest) {

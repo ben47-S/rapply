@@ -3,7 +3,7 @@ import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
 import { z } from "zod";
 
-const reminderSchema = z.object({
+const reminderShape = {
   title: z.string().min(1),
   description: z.string().optional().nullable(),
   type: z.enum(["SUBSCRIPTION", "PURCHASE", "TASK", "ONLINE_PROGRAM", "OTHER"]),
@@ -16,7 +16,26 @@ const reminderSchema = z.object({
   recurrenceEndDate: z.string().datetime().optional().nullable(),
   notifyTiming: z.enum(["REALTIME", "MORNING"]).optional(),
   items: z.array(z.object({ label: z.string().min(1) })).optional(),
-});
+};
+
+const reminderSchema = z.object(reminderShape);
+
+export const reminderPatchSchema = z
+  .object({
+    ...reminderShape,
+    isRecurring: z.boolean().optional(),
+    items: z
+      .array(
+        z.object({
+          id: z.string().optional(),
+          label: z.string().min(1),
+          checked: z.boolean().optional(),
+        })
+      )
+      .optional(),
+    status: z.enum(["PENDING", "DONE"]).optional(),
+  })
+  .partial();
 
 // GET /api/reminders
 export async function GET(req: NextRequest) {

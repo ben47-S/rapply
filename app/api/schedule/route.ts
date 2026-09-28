@@ -4,21 +4,38 @@ import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
 import { z } from "zod";
 
+const HHMM = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+// Les deux heures sont validées en HH:mm, donc l'ordre lexicographique est
+// l'ordre chronologique.
+export function endAfterStart(startTime: string, endTime?: string | null) {
+  if (!endTime) return true;
+  return endTime > startTime;
+}
+
+const scheduleEventShape = {
+  title: z.string().min(1),
+  description: z.string().optional(),
+  dayOfWeek: z
+    .enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"])
+    .optional(),
+  specificDate: z.string().datetime().optional(),
+  startTime: z.string().regex(HHMM), // "HH:mm"
+  endTime: z.string().regex(HHMM).optional(),
+  color: z.string().optional(),
+};
+
 const scheduleEventSchema = z
-  .object({
-    title: z.string().min(1),
-    description: z.string().optional(),
-    dayOfWeek: z
-      .enum(["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY"])
-      .optional(),
-    specificDate: z.string().datetime().optional(),
-    startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/), // "HH:mm"
-    endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
-    color: z.string().optional(),
-  })
+  .object(scheduleEventShape)
   .refine((data) => !!data.dayOfWeek !== !!data.specificDate, {
     message: "Fournir soit dayOfWeek (récurrent), soit specificDate (ponctuel), pas les deux",
+  })
+  .refine((data) => endAfterStart(data.startTime, data.endTime), {
+    message: "L'heure de fin doit être postérieure à l'heure de début",
+    path: ["endTime"],
   });
+
+export const scheduleEventPatchSchema = z.object(scheduleEventShape).partial();
 
 // GET /api/schedule
 export async function GET(req: NextRequest) {

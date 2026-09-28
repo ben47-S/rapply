@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
+import { budgetPatchSchema, spentFor } from "@/app/api/budgets/route";
 
 // GET /api/budgets/:id
 export async function GET(
@@ -40,12 +41,25 @@ export async function PUT(
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
+  const parsed = budgetPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
   const updated = await prisma.budget.update({
     where: { id: id },
-    data: body,
+    data: {
+      ...parsed.data,
+      periodStart: parsed.data.periodStart
+        ? new Date(parsed.data.periodStart)
+        : undefined,
+      periodEnd: parsed.data.periodEnd
+        ? new Date(parsed.data.periodEnd)
+        : undefined,
+    },
   });
 
-  return NextResponse.json(updated);
+  return NextResponse.json({ ...updated, spent: await spentFor(updated, userId) });
 }
 
 // DELETE /api/budgets/:id

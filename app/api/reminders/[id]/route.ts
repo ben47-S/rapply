@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
+import { reminderPatchSchema } from "@/app/api/reminders/route";
 
 // GET /api/reminders/:id
 export async function GET(
@@ -40,27 +41,32 @@ export async function PUT(
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
-  if (body.categoryId) {
+  const parsed = reminderPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (parsed.data.categoryId) {
     const category = await prisma.category.findFirst({
-      where: { id: body.categoryId, userId },
+      where: { id: parsed.data.categoryId, userId },
     });
     if (!category) {
       return NextResponse.json({ error: "Catégorie introuvable" }, { status: 400 });
     }
   }
 
-  const updateData: any = { ...body };
+  const updateData: any = { ...parsed.data };
   delete updateData.items;
-  if (body.dueDate) {
+  if (parsed.data.dueDate) {
     updateData.sentStages = 0;
-    updateData.dueDate = new Date(body.dueDate);
+    updateData.dueDate = new Date(parsed.data.dueDate);
   }
-  if (body.recurrenceEndDate) {
-    updateData.recurrenceEndDate = new Date(body.recurrenceEndDate);
+  if (parsed.data.recurrenceEndDate) {
+    updateData.recurrenceEndDate = new Date(parsed.data.recurrenceEndDate);
   }
 
-  const isTransitioningToDone = body.status === "DONE" && existing.status !== "DONE";
-  const isReopening = body.status === "PENDING" && existing.status === "DONE";
+  const isTransitioningToDone = parsed.data.status === "DONE" && existing.status !== "DONE";
+  const isReopening = parsed.data.status === "PENDING" && existing.status === "DONE";
 
   if (isTransitioningToDone) {
     updateData.completedAt = new Date();
@@ -68,18 +74,49 @@ export async function PUT(
     updateData.completedAt = null;
   }
 
-  if (body.items && Array.isArray(body.items)) {
-    await prisma.reminderItem.deleteMany({ where: { reminderId: id } });
-    if (body.items.length > 0) {
-      await prisma.reminderItem.createMany({
-        data: body.items.map((item: { id?: string; label: string; checked?: boolean }, i: number) => ({
-          label: item.label,
-          checked: item.checked ?? false,
-          order: i,
-          reminderId: id,
-        })),
-      });
-    }
+  if (parsed.data.items && Array.isArray(parsed.data.items)) {
+    // Diff plutôt que deleteMany + createMany : les ids des items conservés
+    // restent stables, et l'opération est atomique (avant, un createMany en
+    // échec après le deleteMany perdait silencieusement tous les items).
+    const current = await prisma.reminderItem.findMany({ where: { reminderId: id } });
+    const currentIds = new Set(current.map((i) => i.id));
+    // un id inconnu de ce rappel retombe sur un create : impossible d'écrire
+    // dans un autre rappel malgré un id forgé dans le corps
+    const kept = new Set(
+      parsed.data.items
+        .map((i) => i.id)
+        .filter((i): i is string => !!i && currentIds.has(i))
+    );
+
+    const remove =
+      kept.size > 0
+        ? prisma.reminderItem.deleteMany({
+            where: { reminderId: id, id: { notIn: [...kept] } },
+          })
+        : prisma.reminderItem.deleteMany({ where: { reminderId: id } });
+
+    await prisma.$transaction([
+      remove,
+      ...parsed.data.items.map((item, i) =>
+        item.id && currentIds.has(item.id)
+          ? prisma.reminderItem.update({
+              where: { id: item.id },
+              data: {
+                label: item.label,
+                checked: item.checked ?? false,
+                order: i,
+              },
+            })
+          : prisma.reminderItem.create({
+              data: {
+                label: item.label,
+                checked: item.checked ?? false,
+                order: i,
+                reminderId: id,
+              },
+            })
+      ),
+    ]);
   }
 
   const updated = await prisma.reminder.update({
@@ -115,8 +152,12 @@ export async function PUT(
     return NextResponse.json(final);
   }
 
-  const amount = body.estimatedAmount !== undefined ? body.estimatedAmount : existing.estimatedAmount;
-  const categoryId = body.categoryId !== undefined ? body.categoryId : existing.categoryId;
+  const amount =
+    parsed.data.estimatedAmount !== undefined
+      ? parsed.data.estimatedAmount
+      : existing.estimatedAmount;
+  const categoryId =
+    parsed.data.categoryId !== undefined ? parsed.data.categoryId : existing.categoryId;
 
   if (isTransitioningToDone && amount) {
     await prisma.transaction.create({

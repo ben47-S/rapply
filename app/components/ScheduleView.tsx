@@ -69,9 +69,9 @@ function findOverlaps(
       sameDay = e.dayOfWeek === cDow;
     } else if (cIsRec && e.specificDate) {
       sameDay =
-        dayjs(e.specificDate).isoWeekday() === DOW_ENUM.indexOf(cDow as any) + 1;
+        dayjs.utc(e.specificDate).isoWeekday() === DOW_ENUM.indexOf(cDow as any) + 1;
     } else if (!cIsRec && e.specificDate) {
-      sameDay = dayjs(e.specificDate).format("YYYY-MM-DD") === cDate;
+      sameDay = dayjs.utc(e.specificDate).format("YYYY-MM-DD") === cDate;
     } else if (!cIsRec && e.dayOfWeek) {
       sameDay =
         DOW_ENUM.indexOf(e.dayOfWeek as any) + 1 === dayjs(cDate).isoWeekday();
@@ -149,7 +149,7 @@ export function ScheduleView({
         __new: false,
         mode: event.specificDate ? "ponctuel" : "recurrent",
         specificDate: event.specificDate
-          ? dayjs(event.specificDate).format("YYYY-MM-DD")
+          ? dayjs.utc(event.specificDate).format("YYYY-MM-DD")
           : "",
         color: event.color ?? "",
       },
@@ -354,6 +354,12 @@ function EventModal({
     if (!title.trim()) return setError("Le titre est requis.");
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime))
       return setError("Heure de début invalide (HH:mm).");
+    if (endTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime))
+      return setError("Heure de fin invalide (HH:mm).");
+    // sans ce garde-fou, endTime < startTime rend findOverlaps inopérant
+    // (cStart < eEnd && eStart < cEnd ne peut plus jamais être vrai)
+    if (endTime && endTime <= startTime)
+      return setError("L'heure de fin doit être postérieure à l'heure de début.");
     if (!color) return setError("Choisissez une couleur.");
     if (mode === "ponctuel" && !specificDate)
       return setError("Choisissez une date.");

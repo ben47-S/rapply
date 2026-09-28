@@ -3,7 +3,7 @@ import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
 import { z } from "zod";
 
-const transactionSchema = z.object({
+const transactionShape = {
   type: z.enum(["INCOME", "EXPENSE"]),
   amount: z.number().positive(),
   currency: z.string().default("XOF"),
@@ -11,7 +11,13 @@ const transactionSchema = z.object({
   note: z.string().optional(),
   categoryId: z.string().optional(),
   reminderId: z.string().optional(),
-});
+};
+
+const transactionSchema = z.object(transactionShape);
+
+export const transactionPatchSchema = z
+  .object({ ...transactionShape, currency: z.string().optional() })
+  .partial();
 
 // GET /api/transactions
 export async function GET(req: NextRequest) {

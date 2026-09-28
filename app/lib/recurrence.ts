@@ -106,7 +106,7 @@ function behaviorLine(r: ReminderLike): string {
   const nd = nextDue(dayjs(), r).format("DD/MM/YYYY");
   s += ` — prochaine occurrence le ${nd}`;
   if (r.recurrenceEndDate) {
-    s += `, jusqu'au ${dayjs(r.recurrenceEndDate).format("DD/MM/YYYY")}.`;
+    s += `, jusqu'au ${dayjs.utc(r.recurrenceEndDate).format("DD/MM/YYYY")}.`;
   } else {
     s += ".";
   }

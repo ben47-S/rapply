@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     trendByMonth.set(key, { income: 0, expense: 0 });
   }
   for (const t of monthlyTrend) {
-    const key = dayjs(t.date).format("YYYY-MM");
+    const key = dayjs.utc(t.date).format("YYYY-MM");
     const entry = trendByMonth.get(key);
     if (!entry) continue;
     if (t.type === "INCOME") entry.income += Number(t.amount);

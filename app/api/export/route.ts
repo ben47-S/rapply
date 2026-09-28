@@ -5,7 +5,7 @@ import { getUserId } from "@/app/lib/auth";
 export async function GET(req: NextRequest) {
   const userId = getUserId(req);
 
-  const [user, categories, reminders, notes, transactions, budgets, scheduleEvents] =
+  const [user, categories, reminders, notes, transactions, budgets, scheduleEvents, recipes] =
     await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
       prisma.reminder.findMany({
         where: { userId },
         orderBy: { dueDate: "asc" },
+        include: { items: { orderBy: { order: "asc" } } },
       }),
       prisma.note.findMany({
         where: { userId },
@@ -41,6 +42,15 @@ export async function GET(req: NextRequest) {
         where: { userId },
         orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
       }),
+      prisma.recipe.findMany({
+        where: { userId },
+        orderBy: { updatedAt: "desc" },
+        include: {
+          ingredients: true,
+          steps: { orderBy: { order: "asc" } },
+          accessories: true,
+        },
+      }),
     ]);
 
   const now = new Date();
@@ -56,6 +66,7 @@ export async function GET(req: NextRequest) {
     transactions,
     budgets,
     scheduleEvents,
+    recipes,
   };
 
   return new NextResponse(JSON.stringify(exportPayload, null, 2), {

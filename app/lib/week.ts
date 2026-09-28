@@ -50,7 +50,7 @@ export function dayEventsFor(date: Dayjs, events: any[]): any[] {
   return events.filter((e) => {
     if (e.dayOfWeek) return e.dayOfWeek === dayName;
     if (e.specificDate) {
-      return dayjs(e.specificDate).format("YYYY-MM-DD") === ds;
+      return dayjs.utc(e.specificDate).format("YYYY-MM-DD") === ds;
     }
     return false;
   });

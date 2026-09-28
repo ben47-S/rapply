@@ -132,7 +132,7 @@ export function DashboardBudgets({ alerts, currency }: { alerts: Alert[]; curren
                           {b.category?.name ?? "Budget global"}
                         </h3>
                         <p className="mt-1 text-xs text-muted">
-                          {dayjs(b.periodStart).format("D MMM YYYY")} au {dayjs(b.periodEnd).format("D MMM YYYY")}
+                          {dayjs.utc(b.periodStart).format("D MMM YYYY")} au {dayjs.utc(b.periodEnd).format("D MMM YYYY")}
                         </p>
                       </div>
                       <span className={`font-mono-log text-xs shrink-0 ${pct >= 100 ? "text-rust" : "text-brass"}`}>

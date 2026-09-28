@@ -3,12 +3,16 @@ import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
 import { z } from "zod";
 
-const categorySchema = z.object({
+const categoryShape = {
   name: z.string().min(1),
   type: z.enum(["INCOME", "EXPENSE"]),
   color: z.string().optional(),
   icon: z.string().optional(),
-});
+};
+
+const categorySchema = z.object(categoryShape);
+
+export const categoryPatchSchema = z.object(categoryShape).partial();
 
 // GET /api/categories
 export async function GET(req: NextRequest) {

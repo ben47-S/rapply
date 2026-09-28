@@ -4,15 +4,7 @@ import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MoreIcon } from "@/app/components/IconButton";
-
-const SECONDARY_LINKS = [
-  { href: "/recettes", label: "Recettes" },
-  { href: "/parametres", label: "Paramètres" },
-];
-
-function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
-}
+import { SECONDARY_LINKS, isActive } from "@/app/lib/nav";
 
 export function BurgerMenu({ align = "right" }: { align?: "left" | "right" }) {
   const [open, setOpen] = useState(false);

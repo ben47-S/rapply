@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
+import { categoryPatchSchema } from "@/app/api/categories/route";
 
 // PUT /api/categories/:id
 export async function PUT(
@@ -19,9 +20,14 @@ export async function PUT(
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
+  const parsed = categoryPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
   const updated = await prisma.category.update({
     where: { id: id },
-    data: body,
+    data: parsed.data,
   });
 
   return NextResponse.json(updated);

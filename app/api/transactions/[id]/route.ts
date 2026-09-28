@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
+import { transactionPatchSchema } from "@/app/api/transactions/route";
 
 // GET /api/transactions/:id
 export async function GET(
@@ -40,9 +41,35 @@ export async function PUT(
     return NextResponse.json({ error: "Introuvable" }, { status: 404 });
   }
 
+  const parsed = transactionPatchSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (parsed.data.categoryId) {
+    const category = await prisma.category.findFirst({
+      where: { id: parsed.data.categoryId, userId },
+    });
+    if (!category) {
+      return NextResponse.json({ error: "Catégorie introuvable" }, { status: 400 });
+    }
+  }
+
+  if (parsed.data.reminderId) {
+    const reminder = await prisma.reminder.findFirst({
+      where: { id: parsed.data.reminderId, userId },
+    });
+    if (!reminder) {
+      return NextResponse.json({ error: "Rappel lié introuvable" }, { status: 400 });
+    }
+  }
+
   const updated = await prisma.transaction.update({
     where: { id: id },
-    data: body,
+    data: {
+      ...parsed.data,
+      date: parsed.data.date ? new Date(parsed.data.date) : undefined,
+    },
   });
 
   return NextResponse.json(updated);

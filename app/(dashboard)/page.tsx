@@ -29,19 +29,6 @@ async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-function spentFor(b: any, transactions: any[]): number {
-  const start = dayjs(b.periodStart).startOf("day");
-  const end = dayjs(b.periodEnd).endOf("day");
-  return transactions
-    .filter((t: any) => {
-      const d = dayjs(t.date);
-      if (d.isBefore(start) || d.isAfter(end)) return false;
-      if (b.categoryId) return t.categoryId === b.categoryId;
-      return t.type === "EXPENSE";
-    })
-    .reduce((s: number, t: any) => s + Number(t.amount), 0);
-}
-
 export default async function DashboardPage() {
   const now = dayjs();
   const todayDow = DOW[now.day()];
@@ -70,7 +57,7 @@ export default async function DashboardPage() {
   const rms = reminders as any[];
   const nts = notes as any[];
 
-  const monthTx = txs.filter((t) => dayjs(t.date).isSame(now, "month"));
+  const monthTx = txs.filter((t) => dayjs.utc(t.date).format("YYYY-MM") === now.format("YYYY-MM"));
   const income = monthTx
     .filter((t) => t.type === "INCOME")
     .reduce((s: number, t: any) => s + Number(t.amount), 0);
@@ -81,7 +68,7 @@ export default async function DashboardPage() {
 
   const alerts = bgs
     .map((b) => {
-      const spent = spentFor(b, txs);
+      const spent = Number(b.spent ?? 0);
       const amount = Number(b.amount);
       const pct = amount > 0 ? Math.min(100, (spent / amount) * 100) : 0;
       return { b, spent, amount, pct };
@@ -90,7 +77,7 @@ export default async function DashboardPage() {
     .sort((a, b) => b.pct - a.pct);
 
   const todaySchedule = (schedule as any[]).filter((e) => {
-    if (e.specificDate) return dayjs(e.specificDate).isSame(now, "day");
+    if (e.specificDate) return dayjs.utc(e.specificDate).format("YYYY-MM-DD") === now.format("YYYY-MM-DD");
     return e.dayOfWeek === todayDow;
   });
 

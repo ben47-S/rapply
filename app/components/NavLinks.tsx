@@ -3,18 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BurgerMenu } from "@/app/components/BurgerMenu";
-
-const NAV = [
-  { href: "/", label: "Accueil" },
-  { href: "/reminders", label: "Rappels" },
-  { href: "/notes", label: "Notes" },
-  { href: "/finances", label: "Finances" },
-  { href: "/schedule", label: "Planning" },
-];
-
-function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
-}
+import { NAV, isActive } from "@/app/lib/nav";
 
 export function NavLinks({ variant }: { variant: "sidebar" | "bottom" }) {
   const pathname = usePathname();
@@ -56,7 +45,7 @@ export function NavLinks({ variant }: { variant: "sidebar" | "bottom" }) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex-1 truncate px-2 py-4 text-center text-sm leading-tight transition-colors ${
+            className={`flex-1 truncate px-1 py-4 text-center text-xs leading-tight transition-colors ${
               active ? "text-parchment" : "text-muted hover:text-parchment"
             }`}
           >

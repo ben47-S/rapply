@@ -256,7 +256,7 @@ function ReminderModal({
     r?.customIntervalDays != null ? String(r.customIntervalDays) : ""
   );
   const [recurrenceEndDate, setRecurrenceEndDate] = useState<string>(
-    r?.recurrenceEndDate ? dayjs(r.recurrenceEndDate).format("YYYY-MM-DD") : ""
+    r?.recurrenceEndDate ? dayjs.utc(r.recurrenceEndDate).format("YYYY-MM-DD") : ""
   );
   const [notifyTiming, setNotifyTiming] = useState<string>(
     r?.notifyTiming ?? "REALTIME"
@@ -314,8 +314,10 @@ function ReminderModal({
 
       if (r.isRecurring) {
         const nd = nextDue(dayjs(), r);
-        const end = r.recurrenceEndDate ? dayjs(r.recurrenceEndDate) : null;
-        if (!end || nd.isSame(end, "day") || nd.isBefore(end)) {
+        const end = r.recurrenceEndDate
+          ? dayjs.utc(r.recurrenceEndDate).format("YYYY-MM-DD")
+          : null;
+        if (!end || nd.format("YYYY-MM-DD") <= end) {
           const payload: any = {
             title: r.title,
             description: r.description || undefined,
@@ -359,8 +361,10 @@ function ReminderModal({
     setSaving(true);
     try {
       const nd = nextDue(dayjs(), r);
-      const end = r.recurrenceEndDate ? dayjs(r.recurrenceEndDate) : null;
-      if (end && nd.isAfter(end)) {
+      const end = r.recurrenceEndDate
+        ? dayjs.utc(r.recurrenceEndDate).format("YYYY-MM-DD")
+        : null;
+      if (end && nd.format("YYYY-MM-DD") > end) {
         const res = await fetch(`/api/reminders/${r.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

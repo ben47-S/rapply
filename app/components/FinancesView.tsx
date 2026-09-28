@@ -53,10 +53,11 @@ export function FinancesView({
 
   const filtered = transactions
     .filter((t: Tx) => {
-      const d = dayjs(t.date);
-      if (period === "jour") return d.isSame(dayjs(), "day");
-      if (period === "annee") return d.isSame(dayjs(), "year");
-      return d.isSame(dayjs(), "month");
+      const d = dayjs.utc(t.date);
+      const now = dayjs();
+      if (period === "jour") return d.format("YYYY-MM-DD") === now.format("YYYY-MM-DD");
+      if (period === "annee") return d.format("YYYY") === now.format("YYYY");
+      return d.format("YYYY-MM") === now.format("YYYY-MM");
     })
     .sort((a, b) => {
       const byDate = new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -346,7 +347,7 @@ export function FinancesView({
             <div className="flex items-center justify-between bg-surface border border-border-log rounded-md px-4 py-3 group-hover:border-brass">
               <div className="min-w-0">
                 <p className="font-mono-log text-xs text-muted mb-1 flex items-center gap-1.5">
-                  <span>{new Date(t.date).toLocaleDateString("fr-FR")}</span>
+                  <span>{dayjs.utc(t.date).format("DD/MM/YYYY")}</span>
                   {t.category && (
                     <>
                       <span
@@ -406,7 +407,7 @@ function TransactionModal({
   const [amount, setAmount] = useState(tx ? String(Number(tx.amount)) : "");
   const [note, setNote] = useState(tx?.note ?? "");
   const [date, setDate] = useState(
-    tx ? dayjs(tx.date).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
+    tx ? dayjs.utc(tx.date).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")
   );
   const [categoryId, setCategoryId] = useState(tx?.categoryId ?? "");
   const [catForm, setCatForm] = useState(false);

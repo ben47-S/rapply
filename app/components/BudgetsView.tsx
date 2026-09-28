@@ -16,37 +16,19 @@ function Spinner({ className = "" }: { className?: string }) {
 }
 
 type B = any;
-type T = any;
 type C = any;
 
-function spentFor(b: B, transactions: T[]): number {
-  const start = dayjs(b.periodStart).startOf("day");
-  const end = dayjs(b.periodEnd).endOf("day");
-  return transactions
-    .filter((t: T) => {
-      const d = dayjs(t.date);
-      if (d.isBefore(start) || d.isAfter(end)) return false;
-      if (b.categoryId) {
-        return t.categoryId === b.categoryId;
-      }
-      return t.type === "EXPENSE";
-    })
-    .reduce((s: number, t: T) => s + Number(t.amount), 0);
-}
-
 function periodLabel(b: B): string {
-  if (b.type === "MONTHLY") return dayjs(b.periodStart).format("MMMM YYYY");
-  return `${dayjs(b.periodStart).format("D MMM YYYY")} – ${dayjs(b.periodEnd).format("D MMM YYYY")}`;
+  if (b.type === "MONTHLY") return dayjs.utc(b.periodStart).format("MMMM YYYY");
+  return `${dayjs.utc(b.periodStart).format("D MMM YYYY")} – ${dayjs.utc(b.periodEnd).format("D MMM YYYY")}`;
 }
 
 export function BudgetsView({
   budgets: initial,
-  transactions,
   categories,
   defaultCurrency,
 }: {
   budgets: B[];
-  transactions: T[];
   categories: C[];
   defaultCurrency: string;
 }) {
@@ -90,7 +72,7 @@ export function BudgetsView({
 
       <div className="space-y-3">
         {budgets.map((b: B) => {
-          const spent = spentFor(b, transactions);
+          const spent = Number(b.spent ?? 0);
           const amount = Number(b.amount);
           const pct = amount > 0 ? Math.min(100, (spent / amount) * 100) : 0;
           const over = spent > amount;
@@ -176,12 +158,12 @@ function BudgetModal({
   const [amount, setAmount] = useState(b ? String(Number(b.amount)) : "");
   const [start, setStart] = useState(
     b
-      ? dayjs(b.periodStart).format("YYYY-MM-DD")
+      ? dayjs.utc(b.periodStart).format("YYYY-MM-DD")
       : dayjs().startOf("month").format("YYYY-MM-DD")
   );
   const [end, setEnd] = useState(
     b
-      ? dayjs(b.periodEnd).format("YYYY-MM-DD")
+      ? dayjs.utc(b.periodEnd).format("YYYY-MM-DD")
       : dayjs().endOf("month").format("YYYY-MM-DD")
   );
   const [categoryId, setCategoryId] = useState(b?.categoryId ?? "");
