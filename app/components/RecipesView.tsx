@@ -97,6 +97,7 @@ export function RecipesView({
     <PageLayout
       title="Recettes"
       variant="search"
+      standalone
       leading={<BackButton />}
       actions={
         <IconButton

@@ -163,7 +163,7 @@ export function SettingsView({
   };
 
   return (
-    <PageLayout title="Paramètres" leading={<BackButton />}>
+    <PageLayout title="Paramètres" leading={<BackButton />} standalone>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-md lg:max-w-none">
         <div className="bg-surface border border-border-log rounded-md px-4 py-5">
           <p className="text-[11px] uppercase tracking-widest text-muted mb-1">

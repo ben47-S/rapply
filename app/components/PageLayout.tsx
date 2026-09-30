@@ -16,6 +16,7 @@ type PageLayoutProps = {
   subheader?: ReactNode;
   variant?: PageLayoutVariant;
   refreshable?: boolean;
+  standalone?: boolean;
 };
 
 export function PageLayout({
@@ -28,12 +29,14 @@ export function PageLayout({
   subheader,
   variant = "standard",
   refreshable = true,
+  standalone = false,
 }: PageLayoutProps) {
   const rootClass = [
     "mobile-page-root",
     variant === "search" && "mobile-page-root--search",
     variant === "filters" && "mobile-page-root--filters",
     variant === "responsive-tools" && "mobile-page-root--responsive-tools",
+    standalone && "mobile-page-root--standalone",
   ]
     .filter(Boolean)
     .join(" ");

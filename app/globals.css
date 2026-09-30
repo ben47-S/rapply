@@ -21,6 +21,7 @@
   --mobile-header-height: calc(3.25rem + env(safe-area-inset-top));
   --mobile-page-title-height: calc(3.5rem + 3px);
   --mobile-page-subheader-height: 3.25rem;
+  --page-sidebar-width: 224px;
 }
 
 html {
@@ -234,6 +235,14 @@ body {
   );
 }
 
+/* Pages hors (dashboard) : ni MobileHeader ni sidebar, donc aucun décalage.
+   Seules les variables sont surchargées : les règles de padding-top et de top
+   se résolvent sur la racine et sur ses enfants, il n'y a rien à réécrire. */
+.mobile-page-root--standalone {
+  --mobile-header-height: env(safe-area-inset-top);
+  --page-sidebar-width: 0px;
+}
+
 .finances-stats-header {
   position: sticky;
   top: calc(var(--mobile-header-height) + var(--mobile-page-title-height));
@@ -246,7 +255,7 @@ body {
   .mobile-page-header {
     height: auto;
     top: 0;
-    left: 224px;
+    left: var(--page-sidebar-width);
     right: 0;
     padding: 1rem 1rem 0 1rem;
     display: flex;
