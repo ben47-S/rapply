@@ -22,7 +22,27 @@ Next.js 16.3 (App Router) + React 19 + Tailwind v4 + Prisma 7.10/Postgres person
 - `pnpm dev` / `pnpm build` / `pnpm start` / `pnpm lint`. **No test runner, no formatter, no `typecheck` script** — `pnpm build` is the only type check, and it is the only gate that actually passes. **`pnpm lint` fails at baseline** (86 errors / 4 warnings) and is not a regression gate: they are almost entirely `no-explicit-any` on the deliberate `any` entity types, plus `set-state-in-effect` in `BurgerMenu`/`login` and one `no-img-element`. Compare against that baseline instead of expecting zero. Bare `eslint` via flat config `eslint.config.mjs`.
 - `npx prisma generate` — regenerate the client after editing `prisma/schema.prisma`. No npm script exists; run it directly.
 - `npx prisma migrate dev` — schema migrations (`prisma/migrations/` exists, 4 applied). Config is `prisma7.config.ts` (Prisma 7's default filename), which is also where `migrations.seed` is declared — there is no `package.json` `prisma.seed` key.
-- `pnpm seed` (`prisma db seed` → `tsx prisma/seed.ts`) and `pnpm create-user` (`tsx prisma/create-user.ts`, interactive). Both import the driver-adapter client from `app/lib/prisma.ts`; don't give them a separate client.
+- `pnpm seed` (`prisma db seed` → `tsx prisma/seed.ts`) and `pnpm create-user` (`tsx prisma/create-user.ts`). Both import the driver-adapter client from `app/lib/prisma.ts`; don't give them a separate client. The two files are **completely independent** — nothing imports `create-user.ts` — so changing one cannot break `pnpm seed`.
+
+## Account CLI (`prisma/create-user.ts`)
+
+Three subcommands, plus the no-argument form which defaults to `create`:
+
+```
+pnpm create-user                      # create, prompts for email + password
+pnpm create-user create <email>
+pnpm create-user password <email>     # also increments tokenVersion
+pnpm create-user delete <email>       # aliases: user:password, user:delete
+```
+
+- **It only runs on the host, never in the container.** The runner stage of the `Dockerfile` copies `public`, `.next/standalone`, `.next/static` and `prisma/` but **no `node_modules` and no `package.json`**, and `tsx` is a devDependency — so `prisma/` being present in the image is misleading. The globally installed `prisma@6.8.2` is not a fallback either: it mismatches the pinned 7.10.0, and `datasource` has no `url` (it comes from `prisma7.config.ts`).
+- Server prerequisites, in this order: `git pull`; write `DATABASE_URL` into a `.env` on the host **before** `npx prisma generate` (the config file loads the env at startup, so `generate` fails without it); `pnpm install`; `npx prisma generate`.
+- **Password input is masked in raw mode, not via readline's `_writeToOutput`** — that private API changes behaviour between Node versions. Outside a TTY (pipe, file, `docker exec` without `-t`) masking is impossible, so it *says so* rather than pretending. A module-level `queue` holds characters received between questions: a pipe delivers every line in one chunk, and without it the confirmation would be swallowed after the first question.
+- `password` **always** bumps `tokenVersion` (same mechanism as `app/api/auth/revoke`), because changing a password means the account was compromised. There is deliberately no `--no-revoke`; the secure default is the one you get.
+- `create` refuses an existing email. An earlier version used `update: {}`, which reported `User créé` and changed nothing — not even the password.
+- `delete` has **no `--yes`**: you must type the email in full. All 8 `user` relations are `onDelete: Cascade`, so deleting a user silently destroys reminders, notes, transactions, categories, budgets, schedule events, recipes and push subscriptions, and there is no import endpoint. It lists the child row counts and points at `GET /api/export` first.
+- Passwords are capped at **72 bytes**, not 72 characters: bcrypt ignores everything beyond, so the stored hash would not match what was typed. An accented character is 2 bytes.
+
 
 ## Prisma 7 gotchas
 

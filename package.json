@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "prisma db seed",
-    "create-user": "tsx prisma/create-user.ts"
+    "create-user": "tsx prisma/create-user.ts",
+    "user:password": "tsx prisma/create-user.ts password",
+    "user:delete": "tsx prisma/create-user.ts delete"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
