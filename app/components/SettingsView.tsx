@@ -48,6 +48,11 @@ export function SettingsView({
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState("");
   const [importResult, setImportResult] = useState<Record<string, number> | null>(null);
+
+  const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+  const [wipeConfirmText, setWipeConfirmText] = useState("");
+  const [wiping, setWiping] = useState(false);
+  const [wipeError, setWipeError] = useState("");
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -114,6 +119,28 @@ export function SettingsView({
     } finally {
       if (alive.current) setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const WIPE_CONFIRM_WORD = "SUPPRIMER";
+
+  const wipeAllData = async () => {
+    setWipeError("");
+    setWiping(true);
+    try {
+      const res = await fetch("/api/data", { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        setWiping(false);
+        return setWipeError(d?.error || "Erreur lors de la suppression.");
+      }
+      // Rechargement complet plutôt que router.refresh() : cette vue garde
+      // ses listes (cats, etc.) dans un useState(initial) jamais resynchronisé,
+      // donc après un vidage total seul un vrai rechargement reflète l'état réel.
+      window.location.reload();
+    } catch {
+      setWiping(false);
+      setWipeError("Erreur réseau lors de la suppression.");
     }
   };
 
@@ -199,6 +226,7 @@ export function SettingsView({
   };
 
   return (
+    <>
     <PageLayout title="Paramètres" leading={<BackButton />} standalone>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 max-w-md lg:max-w-none">
         <div className="bg-surface border border-border-log rounded-md px-4 py-5">
@@ -465,6 +493,24 @@ export function SettingsView({
         <PushSubscribeButton />
       </div>
 
+      <div className="bg-surface border border-rust/50 rounded-md px-4 py-5 max-w-md lg:max-w-none mt-6">
+        <h2 className="font-display text-base text-rust mb-1">Zone de danger</h2>
+        <p className="text-xs text-muted mb-4">
+          Supprime définitivement tous vos rappels, notes, transactions, catégories, budgets, événements et recettes. Votre compte et vos identifiants restent actifs. Pensez à exporter une sauvegarde avant de continuer.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setWipeError("");
+            setWipeConfirmText("");
+            setShowWipeConfirm(true);
+          }}
+          className="px-3 py-2 text-xs rounded font-medium border border-rust text-rust hover:bg-rust hover:text-ink transition-colors cursor-pointer"
+        >
+          Supprimer toutes mes données
+        </button>
+      </div>
+
       <div className="max-w-md lg:max-w-none mt-6 flex flex-wrap items-center gap-3">
         <button
           onClick={logout}
@@ -480,5 +526,52 @@ export function SettingsView({
         </button>
       </div>
     </PageLayout>
+
+    {showWipeConfirm && (
+      <div
+        className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-4"
+        onClick={() => !wiping && setShowWipeConfirm(false)}
+        role="alertdialog"
+        aria-modal="true"
+        aria-label="Supprimer toutes mes données"
+      >
+        <div
+          className="pwa-sheet w-full sm:max-w-sm rounded-t-2xl sm:rounded-lg bg-surface border-0 sm:border border-border-log p-4 text-parchment"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h2 className="font-display text-base mb-1 text-rust">Supprimer toutes mes données</h2>
+          <p className="text-sm text-muted mb-3">
+            Cette action est irréversible. Tout votre contenu sera perdu, seul le compte restera. Tapez{" "}
+            <span className="font-mono-log text-parchment">{WIPE_CONFIRM_WORD}</span> pour confirmer.
+          </p>
+          <input
+            value={wipeConfirmText}
+            onChange={(e) => setWipeConfirmText(e.target.value)}
+            placeholder={WIPE_CONFIRM_WORD}
+            disabled={wiping}
+            className="w-full rounded border border-border-log bg-ink px-3 py-2 text-sm outline-none focus:border-brass mb-2"
+          />
+          {wipeError && <p className="text-xs text-rust mb-2">{wipeError}</p>}
+          <div className="flex gap-2 mt-2 justify-end">
+            <button
+              onClick={() => setShowWipeConfirm(false)}
+              disabled={wiping}
+              className="px-3 py-1.5 text-xs rounded border border-border-log text-muted hover:text-parchment disabled:opacity-50"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={wipeAllData}
+              disabled={wiping || wipeConfirmText !== WIPE_CONFIRM_WORD}
+              className="px-3 py-1.5 text-xs rounded font-medium bg-rust text-ink hover:opacity-90 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+            >
+              {wiping && <Spinner />}
+              Tout supprimer
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
