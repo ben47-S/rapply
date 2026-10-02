@@ -6,7 +6,13 @@ import { usePathname } from "next/navigation";
 import { MoreIcon } from "@/app/components/IconButton";
 import { SECONDARY_LINKS, isActive } from "@/app/lib/nav";
 
-export function BurgerMenu({ align = "right" }: { align?: "left" | "right" }) {
+export function BurgerMenu({
+  align = "right",
+  size = "sm",
+}: {
+  align?: "left" | "right";
+  size?: "sm" | "md";
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -33,10 +39,10 @@ export function BurgerMenu({ align = "right" }: { align?: "left" | "right" }) {
         onClick={() => setOpen((o) => !o)}
         aria-label="Plus de liens"
         className={`hover:text-parchment transition-colors ${
-          open ? "text-parchment" : "text-muted"
-        }`}
+          size === "md" ? "-m-1 p-1" : ""
+        } ${open ? "text-parchment" : "text-muted"}`}
       >
-        <MoreIcon className="w-4 h-4" />
+        <MoreIcon className={size === "md" ? "w-6 h-6" : "w-4 h-4"} />
       </button>
       {open && (
         <div

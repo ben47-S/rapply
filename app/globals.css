@@ -47,8 +47,12 @@ body {
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
-  .pwa-sheet-overlay {
-    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  /* La safe-area doit être absorbée par la feuille elle-même (bg-surface),
+     pas par l'overlay (bg-black/60) : l'overlay est en items-end sur mobile,
+     donc son propre padding-bottom pousse la feuille vers le haut et expose
+     une bande de son fond noir sur toute la largeur, sous la feuille. */
+  .pwa-sheet {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
   }
 }
 
