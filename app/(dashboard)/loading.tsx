@@ -4,7 +4,7 @@ function Skeleton({ className }: { className: string }) {
 
 export default function DashboardLoading() {
   return (
-    <div aria-busy="true" aria-label="Chargement" className="space-y-6">
+    <div aria-busy="true" aria-label="Chargement" className="mobile-page-root space-y-6">
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-44" />
         <Skeleton className="h-8 w-20" />

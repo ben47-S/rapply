@@ -92,16 +92,26 @@ export function PullToRefresh({
   const settle = useCallback(() => {
     const wrapper = wrapperRef.current;
     if (wrapper) {
-      wrapper.style.transition = `transform ${RESET_MS}ms ease-out`;
       wrapper.style.willChange = "";
-      void wrapper.offsetHeight;
-      wrapper.style.transform = "translate3d(0, 0, 0)";
-      window.setTimeout(() => {
-        if (wrapperRef.current) {
-          wrapperRef.current.style.transition = "";
-          wrapperRef.current.style.transform = "";
-        }
-      }, RESET_MS + 20);
+      // Un simple tap (aucun pull réel, offsetRef resté à 0) n'a jamais peint
+      // de transform : pas besoin de l'animation de retour, et surtout pas
+      // besoin d'écrire translate3d(0,0,0) même temporairement, sinon le
+      // wrapper redevient un containing block pendant 200ms et la modale
+      // ouverte par ce tap (clic juste après touchend) saute à l'ouverture.
+      if (offsetRef.current > 0) {
+        wrapper.style.transition = `transform ${RESET_MS}ms ease-out`;
+        void wrapper.offsetHeight;
+        wrapper.style.transform = "translate3d(0, 0, 0)";
+        window.setTimeout(() => {
+          if (wrapperRef.current) {
+            wrapperRef.current.style.transition = "";
+            wrapperRef.current.style.transform = "";
+          }
+        }, RESET_MS + 20);
+      } else {
+        wrapper.style.transition = "";
+        wrapper.style.transform = "";
+      }
     }
     offsetRef.current = 0;
     activeRef.current = false;
