@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dayjs from "@/app/lib/dayjs";
-import { IconButton, PlusIcon, BudgetIcon, ChartIcon } from "@/app/components/IconButton";
+import { IconButton, PlusIcon, ChartIcon } from "@/app/components/IconButton";
 import { PageLayout } from "@/app/components/PageLayout";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 
@@ -107,14 +107,6 @@ export function FinancesView({
             className="h-7 w-7 sm:h-6 sm:w-6"
           >
             <ChartIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
-          </IconButton>
-          <IconButton
-            ariaLabel="Budgets"
-            href="/budgets"
-            variant="surface"
-            className="h-7 w-7 sm:h-6 sm:w-6"
-          >
-            <BudgetIcon className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5" />
           </IconButton>
           <IconButton
             ariaLabel="Ajouter une transaction"
@@ -312,13 +304,13 @@ export function FinancesView({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-        <div className="bg-surface border border-border-log rounded-md px-4 py-5">
+        <div className="bg-surface border border-border-log rounded-md px-4 py-3 sm:py-5">
           <p className="text-[11px] uppercase tracking-widest text-muted mb-1">Entrées</p>
           <p className="font-mono-log text-xl sm:text-2xl text-teal-log truncate">
             +{totalIncome.toLocaleString("fr-FR")} {defaultCurrency}
           </p>
         </div>
-        <div className="bg-surface border border-border-log rounded-md px-4 py-5">
+        <div className="bg-surface border border-border-log rounded-md px-4 py-3 sm:py-5">
           <p className="text-[11px] uppercase tracking-widest text-muted mb-1">Dépenses</p>
           <p className="font-mono-log text-xl sm:text-2xl text-rust truncate">
             -{totalExpense.toLocaleString("fr-FR")} {defaultCurrency}
@@ -592,7 +584,7 @@ function TransactionModal({
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+                className="w-full min-w-0 rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
               />
             </div>
 

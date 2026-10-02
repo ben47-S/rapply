@@ -221,23 +221,28 @@ body {
 }
 
 .mobile-page-root--search {
+  /* +0.75rem : respire sous la barre de recherche, sinon le premier élément
+     (état vide ou grille) la touche visuellement. */
   padding-top: calc(
     var(--mobile-header-height) + var(--mobile-page-title-height) +
-      var(--mobile-page-subheader-height)
+      var(--mobile-page-subheader-height) + 0.75rem
   );
 }
 
 .mobile-page-root--filters {
+  /* +0.5rem : marge ajoutée devant `controls` dans PageLayout, entre le titre
+     et les sélecteurs — sinon ils collent au titre. */
   padding-top: calc(
     var(--mobile-header-height) + var(--mobile-page-title-height) +
-      var(--mobile-page-subheader-height) + var(--mobile-page-subheader-height)
+      var(--mobile-page-subheader-height) + var(--mobile-page-subheader-height) + 0.5rem
   );
 }
 
 .mobile-page-root--responsive-tools {
+  /* +0.5rem : même marge, devant le wrapper `actions` en mobile (flex-col). */
   padding-top: calc(
     var(--mobile-header-height) + var(--mobile-page-title-height) +
-      var(--mobile-page-subheader-height)
+      var(--mobile-page-subheader-height) + 0.5rem
   );
 }
 
@@ -289,14 +294,14 @@ body {
   .mobile-page-root--search {
     padding-top: calc(
       var(--mobile-page-title-height) + 0.25rem +
-        var(--mobile-page-subheader-height)
+        var(--mobile-page-subheader-height) + 0.75rem
     );
   }
 
   .mobile-page-root.mobile-page-root--filters {
     padding-top: calc(
       var(--mobile-page-title-height) + 0.25rem +
-        var(--mobile-page-subheader-height) + var(--mobile-page-subheader-height)
+        var(--mobile-page-subheader-height) + var(--mobile-page-subheader-height) + 0.5rem
     );
   }
 

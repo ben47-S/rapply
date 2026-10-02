@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dayjs from "@/app/lib/dayjs";
-import { IconButton, PlusIcon, BackButton } from "@/app/components/IconButton";
+import { IconButton, PlusIcon } from "@/app/components/IconButton";
 import { PageLayout } from "@/app/components/PageLayout";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 
@@ -53,7 +53,6 @@ export function BudgetsView({
   return (
     <PageLayout
       title="Budgets"
-      leading={<BackButton />}
       actions={
         <IconButton
           ariaLabel="Ajouter un budget"
@@ -299,22 +298,22 @@ function BudgetModal({
             </div>
 
             <div className="flex gap-2">
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <label className="block text-xs text-muted mb-1">Début</label>
                 <input
                   type="date"
                   value={start}
                   onChange={(e) => setStart(e.target.value)}
-                  className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+                  className="w-full min-w-0 rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
                 />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <label className="block text-xs text-muted mb-1">Fin</label>
                 <input
                   type="date"
                   value={end}
                   onChange={(e) => setEnd(e.target.value)}
-                  className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+                  className="w-full min-w-0 rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
                 />
               </div>
             </div>

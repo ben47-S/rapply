@@ -64,9 +64,9 @@ export function PageLayout({
           )}
         </div>
         {actions && variant === "responsive-tools" && (
-          <div className="w-full md:w-auto">{actions}</div>
+          <div className="w-full md:w-auto mt-2 md:mt-0">{actions}</div>
         )}
-        {controls && <div className="w-full">{controls}</div>}
+        {controls && <div className="w-full mt-2">{controls}</div>}
       </header>
 
       {subheader && (

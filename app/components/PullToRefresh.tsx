@@ -9,6 +9,10 @@ const RELEASED_OFFSET = 108;
 const RESET_MS = 180;
 const SLOP = 6;
 const RELOAD_FALLBACK_MS = 5000;
+// Sous ce décalage, le petit indicateur reste invisible : sans ça il
+// apparaissait dès le premier pixel passé SLOP, pour un simple début de
+// scroll qui n'a rien à voir avec une intention de "tirer pour actualiser".
+const VISIBILITY_DEADZONE = 20;
 
 type Phase = "idle" | "pulling" | "armed" | "refreshing";
 
@@ -75,7 +79,10 @@ export function PullToRefresh({
       indicator.style.transform = `translate3d(-50%, ${middle}px, 0) scale(1)`;
       return;
     }
-    const progress = Math.min(offset / THRESHOLD, 1);
+    const progress = Math.min(
+      Math.max(offset - VISIBILITY_DEADZONE, 0) / (THRESHOLD - VISIBILITY_DEADZONE),
+      1
+    );
     indicator.style.opacity = progress.toFixed(3);
     indicator.style.transform =
       `translate3d(-50%, ${middle}px, 0) scale(${(0.55 + progress * 0.45).toFixed(3)}) ` +

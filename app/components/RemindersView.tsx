@@ -696,7 +696,7 @@ function ReminderModal({
                     type="date"
                     value={recurrenceEndDate}
                     onChange={(e) => setRecurrenceEndDate(e.target.value)}
-                    className="w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+                    className="w-full min-w-0 rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
                   />
                 </div>
               </div>
