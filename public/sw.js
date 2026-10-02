@@ -1,20 +1,40 @@
-const CACHE_NAME = "rapply-cache-v2";
+const CACHE_NAME = "rapply-cache-v3";
 
-const PRECACHE_ASSETS = [
+// Toujours disponibles, sans auth : doivent réussir ou l'installation échoue.
+const PRECACHE_STATIC = [
   "/",
+  "/offline",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
 ];
 
+// Pages de l'app : nécessitent une session active au moment de l'installation
+// (le SW n'est enregistré qu'une fois connecté, cf. ServiceWorkerRegistrar),
+// donc le cookie part avec ces fetch same-origin. Mises en cache en best-effort
+// une par une : si l'une échoue (ex. /schedule temporairement indisponible),
+// elle ne doit pas faire échouer l'installation entière du service worker.
+const PRECACHE_ROUTES = [
+  "/reminders",
+  "/notes",
+  "/finances",
+  "/budgets",
+  "/schedule",
+  "/recettes",
+  "/parametres",
+];
+
 // Installation : mise en cache du shell initial et activation immédiate
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_ASSETS))
-      .then(() => self.skipWaiting())
-      .catch((err) => console.warn("[SW] Precache failed:", err))
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(PRECACHE_STATIC);
+      await Promise.all(
+        PRECACHE_ROUTES.map((url) => cache.add(url).catch(() => {}))
+      );
+      await self.skipWaiting();
+    })().catch((err) => console.warn("[SW] Precache failed:", err))
   );
 });
 
@@ -87,7 +107,10 @@ self.addEventListener("fetch", (event) => {
         .catch(() =>
           caches.match(request).then((cached) => {
             if (cached) return cached;
-            return caches.match("/");
+            // Pas de version en cache pour cette URL précise : montrer la page
+            // /offline dédiée plutôt que de substituer silencieusement le
+            // tableau de bord sous une autre URL (contenu trompeur).
+            return caches.match("/offline");
           })
         )
     );
