@@ -112,6 +112,12 @@ export function PullToRefresh({
       if (window.scrollY > 0) return;
       const target = event.target as Element | null;
       if (target?.closest(".pwa-sheet-overlay")) return;
+      // Un tap sur le header fixe (bouton "Ajouter" compris) a souvent quelques
+      // pixels de tremblement avant le touchend — assez pour dépasser SLOP et
+      // armer paint()/settle() sur le wrapper. La modale qui s'ouvre juste
+      // après se retrouve alors à s'ouvrir pendant la fenêtre où ce transform
+      // n'est pas encore vidé, et saute visiblement une fois qu'il l'est.
+      if (target?.closest(".mobile-page-header")) return;
       if (isInsideVerticalScroller(target)) return;
       const touch = event.touches[0];
       if (!touch) return;
