@@ -256,8 +256,9 @@ async function deleteUser(email: string): Promise<void> {
   }
 
   // Pas de --yes : c'est la seule chose qui distingue une intention d'une faute
-  // de frappe, sur une opération où les 8 relations sont en Cascade et où il
-  // n'existe aucun endpoint d'import.
+  // de frappe, sur une opération où les 8 relations sont en Cascade. POST
+  // /api/import peut réinjecter une sauvegarde sur un autre compte, mais sous
+  // de nouveaux id et un nouveau compte : ça n'annule pas cette suppression.
   const typed = await ask(`Pour confirmer, tape exactement l'email (${email}) : `);
   if (typed.trim() !== email) {
     throw new Error("Confirmation incorrecte : aucun compte n'a été supprimé.");

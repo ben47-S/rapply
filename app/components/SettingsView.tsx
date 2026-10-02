@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CURRENCIES, CURRENCY_LABELS } from "@/app/lib/currencies";
-import { BackButton, DownloadIcon } from "@/app/components/IconButton";
+import { BackButton, DownloadIcon, UploadIcon } from "@/app/components/IconButton";
 import { PushSubscribeButton } from "@/app/components/PushSubscribeButton";
 import { PageLayout } from "@/app/components/PageLayout";
 
@@ -43,6 +43,11 @@ export function SettingsView({
   const [newCatColor, setNewCatColor] = useState("#C89B3C");
   const [newCatSaving, setNewCatSaving] = useState(false);
   const [newCatError, setNewCatError] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importResult, setImportResult] = useState<Record<string, number> | null>(null);
   const alive = useRef(true);
   useEffect(() => {
     alive.current = true;
@@ -78,6 +83,37 @@ export function SettingsView({
       setNewCatColor("#C89B3C");
     } finally {
       if (alive.current) setNewCatSaving(false);
+    }
+  };
+
+  const handleImportFile = async (file: File) => {
+    setImportError("");
+    setImportResult(null);
+    setImporting(true);
+    try {
+      const text = await file.text();
+      let json: unknown;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        return setImportError("Ce fichier n'est pas un JSON valide.");
+      }
+      const res = await fetch("/api/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(json),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        return setImportError(
+          d?.error?.formErrors?.join(", ") || d?.error || "Erreur lors de l'import."
+        );
+      }
+      setImportResult(d.counts);
+      router.refresh();
+    } finally {
+      if (alive.current) setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -383,6 +419,40 @@ export function SettingsView({
           <DownloadIcon className="w-4 h-4 text-brass" />
           Exporter toutes les données (JSON)
         </a>
+
+        <div className="mt-4 pt-4 border-t border-border-log">
+          <p className="text-xs text-muted mb-3">
+            Réimportez une sauvegarde JSON sur ce compte. Les données sont ajoutées à celles déjà présentes, rien n&apos;est supprimé ni remplacé.
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImportFile(file);
+            }}
+          />
+          <button
+            type="button"
+            disabled={importing}
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-2 px-3 py-2 text-xs rounded font-medium border border-border-log bg-ink hover:border-brass text-parchment transition-colors cursor-pointer disabled:opacity-60"
+          >
+            {importing ? <Spinner /> : <UploadIcon className="w-4 h-4 text-brass" />}
+            {importing ? "Import en cours…" : "Importer une sauvegarde (JSON)"}
+          </button>
+          {importError && <p className="text-xs text-rust mt-2">{importError}</p>}
+          {importResult && (
+            <p className="text-xs text-teal-log mt-2">
+              Importé : {importResult.categories} catégories, {importResult.reminders} rappels,{" "}
+              {importResult.notes} notes, {importResult.transactions} transactions,{" "}
+              {importResult.budgets} budgets, {importResult.scheduleEvents} événements,{" "}
+              {importResult.recipes} recettes.
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="bg-surface border border-border-log rounded-md px-4 py-5 max-w-md lg:max-w-none mt-6">
