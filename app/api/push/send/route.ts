@@ -11,18 +11,21 @@ export async function POST(req: NextRequest) {
   }
 
   const now = dayjs();
-  const from = now.subtract(1, "minute").toDate();
   const to = now.add(365, "day").toDate();
 
   let remindersSent = 0;
   let budgetsSent = 0;
 
   // ---- Rappels (temps réel) ----
+  // Pas de borne basse sur dueDate : un cron toutes les 10 min ne doit pas
+  // perdre un rappel en retard de plus d'1 min — sentStages < 7 (3 bits, tous
+  // les paliers envoyés) suffit à arrêter de le re-sélectionner une fois fait.
   const reminders = await prisma.reminder.findMany({
     where: {
       status: "PENDING",
       notifyTiming: "REALTIME",
-      dueDate: { gte: from, lte: to },
+      dueDate: { lte: to },
+      sentStages: { lt: 7 },
     },
     include: { user: { include: { pushSubscriptions: true } } },
   });
@@ -53,21 +56,28 @@ export async function POST(req: NextRequest) {
       }
     }
     if (highestUnset >= 0) {
+      // Ne marque les paliers "envoyés" que si au moins un envoi a vraiment
+      // réussi — sinon (aucun abonnement, ou échec webpush) on laisse les
+      // bits intacts pour retenter au prochain cron, au lieu de brûler le
+      // palier pour de bon.
+      let sent = 0;
       if (r.user.pushSubscriptions.length > 0) {
-        await sendPushToMany(r.user.pushSubscriptions, {
+        sent = await sendPushToMany(r.user.pushSubscriptions, {
           title: r.title,
           body:
             r.type === "PURCHASE"
               ? "Liste de courses à faire"
               : r.description || "Rappel",
         });
-        remindersSent++;
       }
-      for (const i of passed) bits |= 1 << i;
-      await prisma.reminder.update({
-        where: { id: r.id },
-        data: { sentStages: bits },
-      });
+      if (sent > 0) {
+        remindersSent++;
+        for (const i of passed) bits |= 1 << i;
+        await prisma.reminder.update({
+          where: { id: r.id },
+          data: { sentStages: bits },
+        });
+      }
     }
   }
 
