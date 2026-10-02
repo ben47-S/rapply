@@ -32,7 +32,7 @@ export function ScheduleToolbar({ week, days }: { week: string; days: number }) 
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-nowrap items-center gap-2 overflow-x-auto">
       <div className="flex rounded border border-border-log overflow-hidden">
         {RANGES.map((r) => (
           <button

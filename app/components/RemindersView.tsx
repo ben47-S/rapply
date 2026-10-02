@@ -817,8 +817,8 @@ function ReminderModal({
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
+          <div className="flex items-center gap-3 flex-wrap">
             {!isNew && isSub && atEcheance && (
               <button
                 onClick={renew}

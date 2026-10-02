@@ -115,6 +115,12 @@ body {
   animation: connection-bubble-in 0.24s ease-out;
 }
 
+@media (max-width: 767px) {
+  .connection-bubble--standalone {
+    top: calc(env(safe-area-inset-top) + 0.5rem);
+  }
+}
+
 .connection-bubble--online {
   border-color: var(--color-teal-log);
 }
@@ -288,7 +294,10 @@ body {
   }
 
   .mobile-page-root.mobile-page-root--filters {
-    padding-top: 7rem;
+    padding-top: calc(
+      var(--mobile-page-title-height) + 0.25rem +
+        var(--mobile-page-subheader-height) + var(--mobile-page-subheader-height)
+    );
   }
 
   .finances-stats-header {
