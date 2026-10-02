@@ -60,7 +60,12 @@ export function PullToRefresh({
   const paint = useCallback((offset: number, refreshing: boolean) => {
     const wrapper = wrapperRef.current;
     if (wrapper) {
-      wrapper.style.transform = `translate3d(0, ${offset}px, 0)`;
+      // offset 0 doit vider le transform (pas juste translate3d(0,0,0)) : tout
+      // transform non vide fait du wrapper un containing block pour ses
+      // descendants position:fixed (les .pwa-sheet-overlay des modales), qui
+      // se positionnent alors par rapport à la hauteur du contenu de la page
+      // au lieu du viewport.
+      wrapper.style.transform = offset === 0 ? "" : `translate3d(0, ${offset}px, 0)`;
     }
     const indicator = indicatorRef.current;
     if (!indicator) return;
@@ -85,7 +90,10 @@ export function PullToRefresh({
       void wrapper.offsetHeight;
       wrapper.style.transform = "translate3d(0, 0, 0)";
       window.setTimeout(() => {
-        if (wrapperRef.current) wrapperRef.current.style.transition = "";
+        if (wrapperRef.current) {
+          wrapperRef.current.style.transition = "";
+          wrapperRef.current.style.transform = "";
+        }
       }, RESET_MS + 20);
     }
     offsetRef.current = 0;
