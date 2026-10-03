@@ -89,7 +89,7 @@ function redirectOrReject(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!login|api/auth/login|api/push/send|api/push/digest|sw\\.js|manifest\\.json|icon-.*\\.png|favicon-.*\\.png|favicon\\.ico|_next/static|_next/image).*)",
+    "/((?!login|api/auth/login|api/push/send|api/push/digest|offline|sw\\.js|manifest\\.json|_next/static|_next/image|.*\\.(?:png|jpg|jpeg|svg|ico|webp|woff2?)$).*)",
   ],
 };
 

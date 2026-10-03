@@ -1,4 +1,4 @@
-const CACHE_NAME = "rapply-cache-v4";
+const CACHE_NAME = "rapply-cache-v5";
 
 // Toujours disponibles, sans auth : doivent réussir ou l'installation échoue.
 // logo-ben-512.png est ici (et pas seulement dans le fetch handler générique
