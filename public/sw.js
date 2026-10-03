@@ -1,4 +1,4 @@
-const CACHE_NAME = "rapply-cache-v3";
+const CACHE_NAME = "rapply-cache-v4";
 
 // Toujours disponibles, sans auth : doivent réussir ou l'installation échoue.
 const PRECACHE_STATIC = [
@@ -7,6 +7,8 @@ const PRECACHE_STATIC = [
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
+  "/icon-192-maskable.png",
+  "/icon-512-maskable.png",
 ];
 
 // Pages de l'app : nécessitent une session active au moment de l'installation
