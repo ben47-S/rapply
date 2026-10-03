@@ -1,12 +1,19 @@
-const CACHE_NAME = "rapply-cache-v3";
+const CACHE_NAME = "rapply-cache-v4";
 
 // Toujours disponibles, sans auth : doivent réussir ou l'installation échoue.
+// logo-ben-512.png est ici (et pas seulement dans le fetch handler générique
+// des images) parce qu'InitialLoading en dépend à CHAQUE lancement à froid :
+// sans précache, cette requête entre en concurrence avec tout le reste au
+// cold-start d'une PWA installée, et l'ancienne branche d'images n'avait
+// aucun fallback si elle perdait la course — d'où le logo qui s'affichait
+// cassé (carré + alt text) plutôt que manquant silencieusement.
 const PRECACHE_STATIC = [
   "/",
   "/offline",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
+  "/logo-ben-512.png",
 ];
 
 // Pages de l'app : nécessitent une session active au moment de l'installation
@@ -81,13 +88,20 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) return cached;
-        return fetch(request).then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        });
+        return fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              const copy = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+            }
+            return response;
+          })
+          .catch(() =>
+            // Retente le cache (une mise en cache concurrente a pu aboutir
+            // entretemps) ; sinon réponse vide plutôt qu'un undefined, qui
+            // ferait planter respondWith().
+            caches.match(request).then((c) => c || new Response("", { status: 504 }))
+          );
       })
     );
     return;
