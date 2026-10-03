@@ -321,7 +321,19 @@ body {
   display: grid;
   place-items: center;
   background: #232323;
-  animation: initial-loading-exit 0.35s ease 0.55s forwards;
+  opacity: 1;
+  transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+/* Le délai avant ce fondu est piloté en JS (InitialLoading.tsx), pas ici :
+   en PWA installée, le splash natif Android/WebAPK reste visible plus
+   longtemps qu'en onglet navigateur avant que la page ne soit révélée, donc
+   un délai fixe en CSS ferait disparaître ce logo pendant qu'il est encore
+   masqué par le splash natif, avant que l'utilisateur n'ait eu l'occasion de
+   le voir. */
+.initial-loading--hidden {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .initial-loading__logo {
@@ -341,13 +353,6 @@ body {
   }
 }
 
-@keyframes initial-loading-exit {
-  to {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
 @media (min-width: 768px) {
   .connection-bubble {
     top: 0.75rem;
@@ -356,7 +361,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .initial-loading,
+  .initial-loading {
+    transition: none;
+  }
+
   .initial-loading__logo {
     animation: none;
   }
