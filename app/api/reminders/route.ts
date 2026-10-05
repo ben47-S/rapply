@@ -3,6 +3,10 @@ import prisma from "@/app/lib/prisma";
 import { getUserId } from "@/app/lib/auth";
 import { z } from "zod";
 
+// Ids générés côté client (hors ligne) : le serveur les accepte pour que rejouer
+// une création après une coupure réseau ne crée pas de doublon.
+const clientId = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
+
 const reminderShape = {
   title: z.string().min(1),
   description: z.string().optional().nullable(),
@@ -16,13 +20,13 @@ const reminderShape = {
   customIntervalDays: z.number().int().positive().optional().nullable(),
   recurrenceEndDate: z.string().datetime().optional().nullable(),
   notifyTiming: z.enum(["REALTIME", "MORNING"]).optional(),
-  items: z.array(z.object({ label: z.string().min(1) })).optional(),
+  items: z.array(z.object({ id: clientId.optional(), label: z.string().min(1) })).optional(),
 };
 
 // Le refine reste hors de reminderShape : .partial() (utilisé par
 // reminderPatchSchema juste en dessous) jette une exception sur un schéma
 // portant un .refine() — même piège documenté pour scheduleEventShape.
-const reminderSchema = z.object(reminderShape).refine(
+const reminderSchema = z.object({ ...reminderShape, id: clientId.optional() }).refine(
   (data) => !data.startDate || new Date(data.startDate) <= new Date(data.dueDate),
   { message: "La date de début doit être avant ou égale à la date d'échéance", path: ["startDate"] }
 );
@@ -87,6 +91,19 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (parsed.data.id) {
+    const existing = await prisma.reminder.findUnique({
+      where: { id: parsed.data.id },
+      include: { category: true, items: { orderBy: { order: "asc" } } },
+    });
+    if (existing) {
+      if (existing.userId !== userId) {
+        return NextResponse.json({ error: "Identifiant déjà utilisé" }, { status: 409 });
+      }
+      return NextResponse.json(existing);
+    }
+  }
+
   const { items: parsedItems, ...rest } = parsed.data;
 
   const reminder = await prisma.reminder.create({
@@ -110,6 +127,7 @@ export async function POST(req: NextRequest) {
   if (parsedItems && parsedItems.length > 0) {
     await prisma.reminderItem.createMany({
       data: parsedItems.map((item, i) => ({
+        id: item.id,
         label: item.label,
         order: i,
         reminderId: reminder.id,

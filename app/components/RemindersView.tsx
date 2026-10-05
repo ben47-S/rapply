@@ -7,6 +7,17 @@ import { PageLayout } from "@/app/components/PageLayout";
 import { ConfirmDialog } from "@/app/components/ConfirmDialog";
 import { StatusStamp } from "@/app/components/StatusStamp";
 import { TYPE_LABELS, FREQ_LABELS, derivedStatus, nextDue } from "@/app/lib/recurrence";
+import {
+  QUEUE_EVENT,
+  applyQueue,
+  buildLocalReminder,
+  enqueue,
+  flushQueue,
+  loadQueue,
+  loadSnapshot,
+  newId,
+  saveSnapshot,
+} from "@/app/lib/offline-queue";
 
 const inputCls =
   "rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass";
@@ -44,6 +55,52 @@ export function RemindersView({
     "tous"
   );
   const [scope, setScope] = useState<"tasks" | "subscriptions">("tasks");
+  const [pending, setPending] = useState(0);
+  const seedRef = useRef(initial);
+
+  useEffect(() => {
+    const seed = seedRef.current;
+    let busy = false;
+
+    const refresh = async () => {
+      const res = await fetch("/api/reminders").catch(() => null);
+      if (!res?.ok) return;
+      const fresh: R[] = await res.json();
+      saveSnapshot(fresh);
+      setReminders(applyQueue(fresh, loadQueue()));
+    };
+
+    const sync = async () => {
+      if (busy) return;
+      busy = true;
+      try {
+        if (navigator.onLine) {
+          const result = await flushQueue();
+          if (result.sent > 0) await refresh();
+        }
+        setPending(loadQueue().length);
+      } finally {
+        busy = false;
+      }
+    };
+
+    if (navigator.onLine) saveSnapshot(seed);
+    setReminders(applyQueue(navigator.onLine ? seed : loadSnapshot() ?? seed, loadQueue()));
+    void sync();
+
+    const onChange = () => void sync();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void sync();
+    };
+    window.addEventListener("online", onChange);
+    window.addEventListener(QUEUE_EVENT, onChange);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", onChange);
+      window.removeEventListener(QUEUE_EVENT, onChange);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
 
   const handleSaved = (
     updated: R | null,
@@ -156,6 +213,12 @@ export function RemindersView({
       ) : visible.length === 0 ? (
         <p className="text-sm text-muted mb-4">Aucun élément pour ce filtre.</p>
       ) : null}
+
+      {pending > 0 && (
+        <p className="text-xs text-brass mb-4">
+          {pending} modification{pending > 1 ? "s" : ""} en attente de synchronisation
+        </p>
+      )}
 
       <div className="border-l border-border-log pl-6">
         {visible.map((r: R) => (
@@ -295,6 +358,7 @@ function ReminderModal({
     setSaving(true);
     try {
       if (r.status === "DONE") {
+        if (!navigator.onLine) return;
         const res = await fetch(`/api/reminders/${r.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -307,13 +371,18 @@ function ReminderModal({
         return;
       }
 
-      const doneRes = await fetch(`/api/reminders/${r.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "DONE" }),
-      });
-      if (!doneRes.ok) return;
-      const doneReminder: R = await doneRes.json();
+      const doneRes = navigator.onLine
+        ? await fetch(`/api/reminders/${r.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "DONE" }),
+          }).catch(() => null)
+        : null;
+      if (doneRes && !doneRes.ok) return;
+      const doneReminder: R = doneRes
+        ? await doneRes.json()
+        : { ...r, status: "DONE", completedAt: new Date().toISOString() };
+      if (!doneRes) enqueue({ kind: "setStatus", reminderId: r.id, status: "DONE" });
 
       if (r.isRecurring) {
         const nd = nextDue(dayjs(), r);
@@ -322,6 +391,7 @@ function ReminderModal({
           : null;
         if (!end || nd.format("YYYY-MM-DD") <= end) {
           const payload: any = {
+            id: newId(),
             title: r.title,
             description: r.description || undefined,
             type: r.type,
@@ -338,16 +408,24 @@ function ReminderModal({
               : {}),
             status: "PENDING",
             ...(r.items && r.items.length > 0
-              ? { items: r.items.map((i: any) => ({ label: i.label })) }
+              ? { items: r.items.map((i: any) => ({ id: newId(), label: i.label })) }
               : {}),
           };
-          const newRes = await fetch("/api/reminders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
-          if (newRes.ok) {
+          const newRes = doneRes
+            ? await fetch("/api/reminders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              }).catch(() => null)
+            : null;
+          if (newRes?.ok) {
             const created: R = await newRes.json();
+            onSaved(doneReminder, undefined, created);
+            return;
+          }
+          if (newRes === null) {
+            const created = buildLocalReminder(payload, categories);
+            enqueue({ kind: "create", reminder: created, body: payload });
             onSaved(doneReminder, undefined, created);
             return;
           }
@@ -446,18 +524,42 @@ function ReminderModal({
           ? { items: checklistItems.filter((i) => i.label.trim()).map((i) => ({ label: i.label.trim(), checked: i.checked ?? false })) }
           : { items: [] }),
       };
-      const res = isNew
-        ? await fetch("/api/reminders", {
+      if (isNew) {
+        const body = {
+          ...payload,
+          id: newId(),
+          items: (payload.items ?? []).map((i: any) => ({ ...i, id: newId() })),
+        };
+        let saved: R | null = null;
+        if (navigator.onLine) {
+          const res = await fetch("/api/reminders", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          })
-        : await fetch(`/api/reminders/${r!.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          });
+            body: JSON.stringify(body),
+          }).catch(() => null);
+          if (res && !res.ok) {
+            const data = await res.json().catch(() => ({}));
+            return setError(
+              data?.error?.formErrors?.join(", ") || "Erreur lors de l'enregistrement."
+            );
+          }
+          if (res) saved = await res.json();
+        }
+        if (!saved) {
+          saved = buildLocalReminder(body, categories);
+          enqueue({ kind: "create", reminder: saved, body });
+        }
+        onSaved(saved);
+        return;
+      }
 
+      if (!navigator.onLine) return setError("Modification indisponible hors ligne.");
+      const res = await fetch(`/api/reminders/${r!.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }).catch(() => null);
+      if (!res) return setError("Connexion impossible, réessaie.");
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         return setError(
@@ -798,17 +900,24 @@ function ReminderModal({
                           checked={item.checked}
                           onChange={async () => {
                             setItemLoadingId(item.id);
-                            const res = await fetch(
-                              `/api/reminders/${r.id}/items/${item.id}`,
-                              {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ checked: true }),
-                              }
-                            );
-                            if (res.ok) {
+                            const res = navigator.onLine
+                              ? await fetch(`/api/reminders/${r.id}/items/${item.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ checked: true }),
+                                }).catch(() => null)
+                              : null;
+                            if (res?.ok) {
                               const updated: R = await res.json();
                               onSaved(updated);
+                            } else if (res === null) {
+                              const op = {
+                                kind: "checkItem" as const,
+                                reminderId: r.id,
+                                itemId: item.id,
+                              };
+                              enqueue(op);
+                              onSaved(applyQueue([r], [op])[0]);
                             }
                             setItemLoadingId(null);
                           }}
