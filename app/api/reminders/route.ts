@@ -7,6 +7,7 @@ const reminderShape = {
   title: z.string().min(1),
   description: z.string().optional().nullable(),
   type: z.enum(["SUBSCRIPTION", "PURCHASE", "TASK", "ONLINE_PROGRAM", "OTHER"]),
+  startDate: z.string().datetime().optional().nullable(),
   dueDate: z.string().datetime(),
   estimatedAmount: z.number().positive().optional().nullable(),
   categoryId: z.string().optional().nullable(),
@@ -18,7 +19,13 @@ const reminderShape = {
   items: z.array(z.object({ label: z.string().min(1) })).optional(),
 };
 
-const reminderSchema = z.object(reminderShape);
+// Le refine reste hors de reminderShape : .partial() (utilisé par
+// reminderPatchSchema juste en dessous) jette une exception sur un schéma
+// portant un .refine() — même piège documenté pour scheduleEventShape.
+const reminderSchema = z.object(reminderShape).refine(
+  (data) => !data.startDate || new Date(data.startDate) <= new Date(data.dueDate),
+  { message: "La date de début doit être avant ou égale à la date d'échéance", path: ["startDate"] }
+);
 
 export const reminderPatchSchema = z
   .object({
@@ -85,6 +92,7 @@ export async function POST(req: NextRequest) {
   const reminder = await prisma.reminder.create({
     data: {
       ...rest,
+      startDate: parsed.data.startDate ? new Date(parsed.data.startDate) : undefined,
       dueDate: new Date(parsed.data.dueDate),
       estimatedAmount: parsed.data.estimatedAmount ?? undefined,
       categoryId: parsed.data.categoryId ?? undefined,

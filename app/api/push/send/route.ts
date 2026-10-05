@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
       type: r.type,
       frequency: r.frequency,
       customIntervalDays: r.customIntervalDays,
+      startDate: r.startDate,
       dueDate: r.dueDate,
       recurrenceEndDate: r.recurrenceEndDate,
       isRecurring: r.isRecurring,

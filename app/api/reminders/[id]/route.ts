@@ -64,6 +64,28 @@ export async function PUT(
   if (parsed.data.recurrenceEndDate) {
     updateData.recurrenceEndDate = new Date(parsed.data.recurrenceEndDate);
   }
+  // startDate est optionnel et nullable : seul `undefined` (absent du body)
+  // doit laisser l'existant tel quel, un `null` explicite doit l'effacer.
+  if (parsed.data.startDate !== undefined) {
+    updateData.startDate = parsed.data.startDate ? new Date(parsed.data.startDate) : null;
+  }
+
+  const effectiveDue = parsed.data.dueDate ? new Date(parsed.data.dueDate) : existing.dueDate;
+  const effectiveStart =
+    parsed.data.startDate !== undefined
+      ? parsed.data.startDate
+        ? new Date(parsed.data.startDate)
+        : null
+      : existing.startDate;
+  // PATCH partiel : ScheduleEvent a le même problème (endAfterStart comparé à
+  // existing.startTime) — une valeur non envoyée dans ce body doit quand même
+  // être revalidée contre l'autre, déjà en base.
+  if (effectiveStart && effectiveStart > effectiveDue) {
+    return NextResponse.json(
+      { error: "La date de début doit être avant ou égale à la date d'échéance" },
+      { status: 400 }
+    );
+  }
 
   const isTransitioningToDone = parsed.data.status === "DONE" && existing.status !== "DONE";
   const isReopening = parsed.data.status === "PENDING" && existing.status === "DONE";

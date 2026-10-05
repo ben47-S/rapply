@@ -246,6 +246,9 @@ function ReminderModal({
    const [due, setDue] = useState(
      r ? dayjs(r.dueDate).format("YYYY-MM-DDTHH:mm") : ""
    );
+   const [startDate, setStartDate] = useState(
+     r?.startDate ? dayjs(r.startDate).format("YYYY-MM-DDTHH:mm") : ""
+   );
   const [estimatedAmount, setEstimatedAmount] = useState(
     r?.estimatedAmount != null ? String(Number(r.estimatedAmount)) : ""
   );
@@ -412,6 +415,9 @@ function ReminderModal({
     setError("");
     if (!title.trim()) return setError("Le titre est requis.");
     if (!due) return setError("La date est requise.");
+    if (startDate && new Date(startDate) > new Date(due)) {
+      return setError("La date de début doit être avant ou égale à la date d'échéance.");
+    }
     setSaving(true);
     try {
       const amt = estimatedAmount ? parseFloat(String(estimatedAmount).replace(",", ".")) : undefined;
@@ -419,6 +425,7 @@ function ReminderModal({
         title: title.trim(),
         description: description || undefined,
         type,
+        startDate: startDate ? new Date(startDate).toISOString() : null,
         dueDate: new Date(due).toISOString(),
         estimatedAmount: amt && !isNaN(amt) && amt > 0 ? amt : null,
         categoryId: categoryId || null,
@@ -536,6 +543,21 @@ function ReminderModal({
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-xs text-muted mb-1">
+                Date de début (optionnel)
+              </label>
+              <input
+                type="datetime-local"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="block w-full min-w-0 max-w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+              />
+              <p className="text-xs text-muted mt-1">
+                Laisse vide pour garder le comportement actuel (anticipation à partir de la création du rappel).
+              </p>
             </div>
 
             <div>
@@ -710,6 +732,14 @@ function ReminderModal({
               <p className="text-xs text-muted mb-1">Type</p>
               <p className="text-sm">{TYPE_LABELS[r?.type] ?? r?.type}</p>
             </div>
+            {r?.startDate && (
+              <div>
+                <p className="text-xs text-muted mb-1">Date de début</p>
+                <p className="text-sm">
+                  {dayjs(r.startDate).format("D MMMM YYYY à HH:mm")}
+                </p>
+              </div>
+            )}
             <div>
               <p className="text-xs text-muted mb-1">{dateLabel}</p>
               <p className="text-sm">

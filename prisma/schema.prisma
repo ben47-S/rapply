@@ -80,6 +80,7 @@ model Reminder {
   title       String
   description String?
   type        ReminderType
+  startDate   DateTime?
   dueDate     DateTime
   completedAt DateTime?
   status      ReminderStatus @default(PENDING)

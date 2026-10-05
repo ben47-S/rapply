@@ -27,6 +27,7 @@ export type ReminderLike = {
   type?: string | null;
   frequency?: string | null;
   customIntervalDays?: number | null;
+  startDate?: string | Date | null;
   dueDate?: string | Date | null;
   recurrenceEndDate?: string | Date | null;
   isRecurring?: boolean | null;
@@ -77,9 +78,13 @@ export function prevOccurrence(dueDate: dayjs.Dayjs, r: ReminderLike): dayjs.Day
 }
 
 // Ancre de début de la fenêtre d'anticipation :
-// - récurrent : occurrence précédente (dueDate - intervalle)
-// - ponctuel  : création du rappel
+// - startDate explicite -> toujours prioritaire, récurrent ou non (l'utilisateur
+//   a dit "je dois m'en occuper à partir de telle date", pas seulement "avant
+//   telle date")
+// - récurrent sans startDate : occurrence précédente (dueDate - intervalle)
+// - ponctuel sans startDate  : création du rappel
 export function windowStart(r: ReminderLike): dayjs.Dayjs {
+  if (r.startDate) return dayjs(r.startDate);
   const due = dayjs(r.dueDate);
   if (r.isRecurring || r.type === "SUBSCRIPTION") {
     return prevOccurrence(due, r);
@@ -117,10 +122,12 @@ export function reminderSummary(r: ReminderLike) {
   const typeLabel = TYPE_LABELS[r.type ?? ""] ?? "Rappel";
   const statusLabel = STATUS_LABELS[derivedStatus(r)];
   const due = r.dueDate ? dayjs(r.dueDate).format("DD/MM/YYYY") : null;
+  const startDate = r.startDate ? dayjs(r.startDate).format("DD/MM/YYYY") : null;
   return {
     typeLabel,
     statusLabel,
     due,
+    startDate,
     behavior: behaviorLine(r),
     isLinked: !!(r.isRecurring || r.type === "SUBSCRIPTION"),
   };
