@@ -33,6 +33,14 @@ function Spinner({ className = "" }: { className?: string }) {
 
 type R = any;
 
+// Le serveur n'a pas pris la modification : coupure réseau (pas de réponse),
+// session expirée (401, fréquent sur une PWA dont les cookies se perdent) ou
+// erreur serveur. Dans ces cas on met en file au lieu de perdre la saisie.
+// Une autre erreur (400 validation…) reste affichée à l'utilisateur.
+function notSaved(res: Response | null): boolean {
+  return !res || res.status === 401 || res.status >= 500;
+}
+
 function dotColor(r: R): string {
   const s = derivedStatus(r);
   if (s === "DONE") return "bg-teal-log";
@@ -376,14 +384,15 @@ function ReminderModal({
         return;
       }
 
-      const doneRes = navigator.onLine
+      const rawDone = navigator.onLine
         ? await fetch(`/api/reminders/${r.id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status: "DONE" }),
           }).catch(() => null)
         : null;
-      if (doneRes && !doneRes.ok) return;
+      if (rawDone && !rawDone.ok && !notSaved(rawDone)) return;
+      const doneRes = rawDone && rawDone.ok ? rawDone : null;
       const doneReminder: R = doneRes
         ? await doneRes.json()
         : { ...r, status: "DONE", completedAt: new Date().toISOString() };
@@ -542,13 +551,13 @@ function ReminderModal({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           }).catch(() => null);
-          if (res && !res.ok) {
+          if (res && res.ok) saved = await res.json().catch(() => null);
+          else if (res && !notSaved(res)) {
             const data = await res.json().catch(() => ({}));
             return setError(
               data?.error?.formErrors?.join(", ") || "Erreur lors de l'enregistrement."
             );
           }
-          if (res) saved = await res.json();
         }
         if (!saved) {
           saved = buildLocalReminder(body, categories);
@@ -915,7 +924,7 @@ function ReminderModal({
                             if (res?.ok) {
                               const updated: R = await res.json();
                               onSaved(updated);
-                            } else if (res === null) {
+                            } else if (notSaved(res)) {
                               const op = {
                                 kind: "checkItem" as const,
                                 reminderId: r.id,
