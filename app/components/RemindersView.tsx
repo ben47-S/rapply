@@ -95,10 +95,15 @@ export function RemindersView({
     window.addEventListener("online", onChange);
     window.addEventListener(QUEUE_EVENT, onChange);
     document.addEventListener("visibilitychange", onVisible);
+    // iOS ne déclenche pas toujours `online` : on relance tant qu'il reste des modifications.
+    const retry = window.setInterval(() => {
+      if (loadQueue().length > 0) void sync();
+    }, 20000);
     return () => {
       window.removeEventListener("online", onChange);
       window.removeEventListener(QUEUE_EVENT, onChange);
       document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(retry);
     };
   }, []);
 
