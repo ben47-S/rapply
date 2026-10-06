@@ -1,4 +1,4 @@
-const CACHE_NAME = "rapply-cache-v5";
+const CACHE_NAME = "rapply-cache-v6";
 
 // Toujours disponibles, sans auth : doivent réussir ou l'installation échoue.
 // logo-ben-512.png est ici (et pas seulement dans le fetch handler générique
@@ -31,6 +31,15 @@ const PRECACHE_ROUTES = [
   "/parametres",
 ];
 
+// Payload RSC d'une route : c'est ce que le routeur client télécharge lors
+// d'une navigation interne (clic sur un lien, bottom nav). Hors ligne, le
+// téléphone ne peut pas le redemander au serveur, donc il doit être en cache.
+// Clé dédiée (et non l'URL nue) : le HTML et le RSC d'une même route ne
+// doivent jamais se substituer l'un à l'autre.
+function rscKey(pathname) {
+  return new Request(`${self.location.origin}${pathname}?__rsc-offline=1`);
+}
+
 // Installation : mise en cache du shell initial et activation immédiate
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -39,6 +48,16 @@ self.addEventListener("install", (event) => {
       await cache.addAll(PRECACHE_STATIC);
       await Promise.all(
         PRECACHE_ROUTES.map((url) => cache.add(url).catch(() => {}))
+      );
+      // Payload RSC complet (sans en-tête Next-Router-State-Tree, donc pas
+      // partiel) pour que la navigation interne marche hors ligne dès le
+      // premier lancement, sans avoir à visiter chaque page en ligne avant.
+      await Promise.all(
+        PRECACHE_ROUTES.map((url) =>
+          fetch(url, { headers: { RSC: "1" } })
+            .then((res) => (res.ok ? cache.put(rscKey(url), res) : null))
+            .catch(() => {})
+        )
       );
       await self.skipWaiting();
     })().catch((err) => console.warn("[SW] Precache failed:", err))
@@ -103,6 +122,29 @@ self.addEventListener("fetch", (event) => {
             caches.match(request).then((c) => c || new Response("", { status: 504 }))
           );
       })
+    );
+    return;
+  }
+
+  // 1bis. Navigation interne du routeur (en-tête RSC) -> Network First, avec
+  // repli sur le payload RSC précaché. Sans ça, une page jamais visitée en
+  // ligne affichait "Impossible de charger cette page" hors ligne. On ne
+  // garde que les réponses complètes (sans Next-Router-State-Tree) : une
+  // réponse partielle ne se recolle pas à l'arbre affiché plus tard.
+  if (request.headers.get("RSC") === "1") {
+    const key = rscKey(url.pathname);
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok && !request.headers.get("Next-Router-State-Tree")) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(key, copy));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(key, { ignoreVary: true }).then((c) => c || new Response("", { status: 504 }))
+        )
     );
     return;
   }
