@@ -1,7 +1,19 @@
 import prisma from "@/app/lib/prisma";
-import dayjs from "dayjs";
+import dayjs from "@/app/lib/dayjs";
 import { windowStart, stagesFor } from "@/app/lib/recurrence";
 import { sendPushToMany } from "@/app/lib/push";
+
+// Ligne de date/heure des notifs de rappel, en heure du serveur (TZ=
+// Europe/Paris dans docker-compose, sinon UTC et décalage de 1-2 h).
+// Ordre : retard d'abord, puis aujourd'hui/demain, sinon date absolue.
+function dueLabel(dueDate: Date): string {
+  const due = dayjs(dueDate);
+  const time = due.format("HH:mm");
+  if (due.isBefore(dayjs())) return `En retard (${due.format("D MMM [à] HH:mm")})`;
+  if (due.isSame(dayjs(), "day")) return `Aujourd'hui à ${time}`;
+  if (due.isSame(dayjs().add(1, "day"), "day")) return `Demain à ${time}`;
+  return `Le ${due.format("dddd D MMMM [à] HH:mm")}`;
+}
 
 export async function runRealtimePushJob(): Promise<{
   reminders: number;
@@ -63,9 +75,10 @@ export async function runRealtimePushJob(): Promise<{
         sent = await sendPushToMany(r.user.pushSubscriptions, {
           title: r.title,
           body:
-            r.type === "PURCHASE"
+            (r.type === "PURCHASE"
               ? "Liste de courses à faire"
-              : r.description || "Rappel",
+              : r.description || "Rappel") +
+            `\n${dueLabel(r.dueDate)}`,
         });
       }
       if (sent > 0) {
