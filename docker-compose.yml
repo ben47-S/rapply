@@ -24,6 +24,7 @@ services:
       - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
     networks:
       - traefik-network
+      - voisilab_default
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik-network"
@@ -33,4 +34,6 @@ services:
 
 networks:
   traefik-network:
+    external: true
+  voisilab_default:
     external: true

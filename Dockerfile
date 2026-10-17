@@ -52,7 +52,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-RUN npm install -g prisma@6.8.2 --registry=https://registry.yarnpkg.com
 
 USER nextjs
 
