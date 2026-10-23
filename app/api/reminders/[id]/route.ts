@@ -59,6 +59,7 @@ export async function PUT(
   delete updateData.items;
   if (parsed.data.dueDate) {
     updateData.sentStages = 0;
+    updateData.lastNudgeAt = null;
     updateData.dueDate = new Date(parsed.data.dueDate);
   }
   if (parsed.data.recurrenceEndDate) {
@@ -94,6 +95,9 @@ export async function PUT(
     updateData.completedAt = new Date();
   } else if (isReopening) {
     updateData.completedAt = null;
+    // Rouvrir un rappel en remet à plat : la relance 12 h repart de zéro, ce
+    // qui est voulu (l'utilisateur a exprimé un choix nouveau, pas un oubli).
+    updateData.lastNudgeAt = null;
   }
 
   if (parsed.data.items && Array.isArray(parsed.data.items)) {

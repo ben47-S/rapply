@@ -41,9 +41,9 @@ export function startScheduler(): void {
     if (realtimeBusy) return;
     realtimeBusy = true;
     try {
-      const { reminders, budgets } = await runRealtimePushJob();
+      const { reminders, budgets, nudges } = await runRealtimePushJob();
       console.log(
-        `[scheduler] ${new Date().toISOString()} temps-reel rappels=${reminders} budgets=${budgets}`
+        `[scheduler] ${new Date().toISOString()} temps-reel rappels=${reminders} budgets=${budgets} retards=${nudges}`
       );
     } catch (error) {
       console.error("[scheduler] echec du passage temps-reel:", error);

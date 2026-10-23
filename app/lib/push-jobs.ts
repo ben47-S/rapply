@@ -18,12 +18,14 @@ function dueLabel(dueDate: Date): string {
 export async function runRealtimePushJob(): Promise<{
   reminders: number;
   budgets: number;
+  nudges: number;
 }> {
   const now = dayjs();
   const to = now.add(365, "day").toDate();
 
   let remindersSent = 0;
   let budgetsSent = 0;
+  let nudgesSent = 0;
 
   // ---- Rappels (temps réel) ----
   // Pas de borne basse sur dueDate : un cron toutes les 3 min ne doit pas
@@ -84,11 +86,49 @@ export async function runRealtimePushJob(): Promise<{
       if (sent > 0) {
         remindersSent++;
         for (const i of passed) bits |= 1 << i;
+        // Un rappel déjà en retard dont le palier 100 % vient de partir : on
+        // pose lastNudgeAt tout de suite, sinon la relance 12 h ci-dessous le
+        // selectionnerait dans le même tick et enverrait deux notifs d'affilée.
+        const overdueNow = dayjs(r.dueDate).isBefore(now);
         await prisma.reminder.update({
           where: { id: r.id },
-          data: { sentStages: bits },
+          data: { sentStages: bits, ...(overdueNow ? { lastNudgeAt: now.toDate() } : {}) },
         });
       }
+    }
+  }
+
+  // ---- Relance des rappels en retard (toutes les 12 h, jusqu'au cochage) ----
+  // Concerne aussi les MORNING : le résumé du matin ne couvre que la journée en
+  // cours, donc un rappel oublié la veille ne serait jamais repris sans ça.
+  // `dueDate < now - 12h` fait office de premier déclencheur (12 h après
+  // l'échéance, pas dessus — le palier 100 % vient déjà de dire « En retard »),
+  // et `lastNudgeAt` cadence les suivantes.
+  const nudgeCutoff = now.subtract(12, "hour").toDate();
+  const overdue = await prisma.reminder.findMany({
+    where: {
+      status: "PENDING",
+      dueDate: { lt: nudgeCutoff },
+      OR: [{ lastNudgeAt: null }, { lastNudgeAt: { lt: nudgeCutoff } }],
+    },
+    include: { user: { include: { pushSubscriptions: true } } },
+  });
+
+  for (const r of overdue) {
+    const subs = r.user.pushSubscriptions;
+    if (subs.length === 0) continue;
+    const sent = await sendPushToMany(subs, {
+      title: r.title,
+      body: `Toujours pas fait — échéance dépassée le ${dayjs(r.dueDate).format(
+        "dddd D MMMM [à] HH:mm"
+      )}`,
+    });
+    if (sent > 0) {
+      nudgesSent++;
+      await prisma.reminder.update({
+        where: { id: r.id },
+        data: { lastNudgeAt: now.toDate() },
+      });
     }
   }
 
@@ -134,7 +174,7 @@ export async function runRealtimePushJob(): Promise<{
     });
   }
 
-  return { reminders: remindersSent, budgets: budgetsSent };
+  return { reminders: remindersSent, budgets: budgetsSent, nudges: nudgesSent };
 }
 
 export async function runDigestJob(): Promise<{ digest: number }> {

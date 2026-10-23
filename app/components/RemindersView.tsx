@@ -48,6 +48,17 @@ function dotColor(r: R): string {
   return "bg-brass";
 }
 
+// Valeur par défaut du report : le lendemain de l'échéance, à la même heure.
+// Si le rappel est déjà si en retard que « +1 jour » reste dans le passé, on
+// remonte jour par jour jusqu'à atterrir dans le futur.
+function defaultSnoozeValue(r: R): string {
+  const due = dayjs(r.dueDate);
+  let target = due.add(1, "day");
+  const now = dayjs();
+  while (target.isBefore(now)) target = target.add(1, "day");
+  return target.format("YYYY-MM-DDTHH:mm");
+}
+
 export function RemindersView({
   reminders: initial,
   categories = [],
@@ -63,6 +74,7 @@ export function RemindersView({
     "tous"
   );
   const [scope, setScope] = useState<"tasks" | "subscriptions">("tasks");
+  const [snooze, setSnooze] = useState<R | null>(null);
   const [pending, setPending] = useState(0);
   const seedRef = useRef(initial);
 
@@ -235,49 +247,60 @@ export function RemindersView({
 
       <div className="border-l border-border-log pl-6">
         {visible.map((r: R) => (
-          <button
-            key={r.id}
-            onClick={() => setOpen({ r })}
-            className="relative block w-full text-left pb-6 cursor-pointer group"
-          >
-            <div
-              className={`absolute -left-[29px] top-1.5 w-2.5 h-2.5 rounded-full ${dotColor(r)}`}
-            />
-            <div className="flex items-center justify-between bg-surface border border-border-log rounded-md px-4 py-3 group-hover:border-brass">
-              <div className="min-w-0 flex-1 mr-3">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="font-mono-log text-xs text-muted">
-                    {new Date(r.dueDate).toLocaleDateString("fr-FR")} ·{" "}
-                    {TYPE_LABELS[r.type] ?? r.type}
-                  </span>
-                  {r.category && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-muted">
-                      <span
-                        className="w-2 h-2 rounded-full shrink-0"
-                        style={{ backgroundColor: r.category.color || "#888" }}
-                      />
-                      <span className="truncate">{r.category.name}</span>
+          <div key={r.id} className="relative pb-6">
+            <button
+              onClick={() => setOpen({ r })}
+              className="relative block w-full text-left cursor-pointer group"
+            >
+              <div
+                className={`absolute -left-[29px] top-1.5 w-2.5 h-2.5 rounded-full ${dotColor(r)}`}
+              />
+              <div className="flex items-center justify-between bg-surface border border-border-log rounded-md px-4 py-3 group-hover:border-brass">
+                <div className="min-w-0 flex-1 mr-3">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-mono-log text-xs text-muted">
+                      {new Date(r.dueDate).toLocaleDateString("fr-FR")} ·{" "}
+                      {TYPE_LABELS[r.type] ?? r.type}
                     </span>
-                  )}
-                  {r.estimatedAmount != null && (
-                    <span className="font-mono-log text-xs text-brass">
-                      ~{Number(r.estimatedAmount).toLocaleString("fr-FR")} {currency}
-                    </span>
-                  )}
-                  {r.items && r.items.length > 0 && (
-                    <span className="font-mono-log text-[10px] text-brass">
-                      ☐ {r.items.filter((i: any) => i.checked).length}/{r.items.length}
-                    </span>
+                    {r.category && (
+                      <span className="inline-flex items-center gap-1 text-[11px] text-muted">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: r.category.color || "#888" }}
+                        />
+                        <span className="truncate">{r.category.name}</span>
+                      </span>
+                    )}
+                    {r.estimatedAmount != null && (
+                      <span className="font-mono-log text-xs text-brass">
+                        ~{Number(r.estimatedAmount).toLocaleString("fr-FR")} {currency}
+                      </span>
+                    )}
+                    {r.items && r.items.length > 0 && (
+                      <span className="font-mono-log text-[10px] text-brass">
+                        ☐ {r.items.filter((i: any) => i.checked).length}/{r.items.length}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-parchment truncate">{r.title}</p>
+                  {r.description && (
+                    <p className="text-sm text-muted truncate">{r.description}</p>
                   )}
                 </div>
-                <p className="text-parchment truncate">{r.title}</p>
-                {r.description && (
-                  <p className="text-sm text-muted truncate">{r.description}</p>
-                )}
+                <StatusStamp status={derivedStatus(r)} />
               </div>
-              <StatusStamp status={derivedStatus(r)} />
-            </div>
-          </button>
+            </button>
+            {derivedStatus(r) === "OVERDUE" && (
+              <div className="flex justify-end mt-1.5">
+                <button
+                  onClick={() => setSnooze(r)}
+                  className="px-3 py-1 text-xs rounded border border-rust text-rust hover:bg-rust hover:text-parchment"
+                >
+                  Repousser
+                </button>
+              </div>
+            )}
+          </div>
         ))}
       </div>
 
@@ -288,6 +311,14 @@ export function RemindersView({
           categories={categories}
           currency={currency}
           onClose={() => setOpen(null)}
+          onSaved={handleSaved}
+        />
+      )}
+
+      {snooze && (
+        <SnoozeModal
+          r={snooze}
+          onClose={() => setSnooze(null)}
           onSaved={handleSaved}
         />
       )}
@@ -1057,5 +1088,104 @@ function ReminderModal({
       />
     )}
     </>
+  );
+}
+
+// Mini-feuille « Repousser » : reporte l'échéance d'un rappel en retard.
+// Le PUT remet sentStages et lastNudgeAt à zéro côté serveur, donc les paliers
+// et la relance 12 h repartent à neuf pour la nouvelle date.
+function SnoozeModal({
+  r,
+  onClose,
+  onSaved,
+}: {
+  r: R;
+  onClose: () => void;
+  onSaved: (updated: R) => void;
+}) {
+  const [value, setValue] = useState(() => defaultSnoozeValue(r));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const alive = useRef(true);
+
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  const submit = async () => {
+    if (!value) return;
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/reminders/${r.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dueDate: new Date(value).toISOString() }),
+      }).catch(() => null);
+      if (!res) return setError("Connexion impossible, réessaie.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return setError(
+          data?.error?.formErrors?.join(", ") || "Erreur lors du report."
+        );
+      }
+      onSaved(await res.json());
+    } finally {
+      if (alive.current) setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="pwa-sheet-overlay fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="pwa-sheet w-full sm:max-w-sm rounded-t-2xl sm:rounded-lg bg-surface border-0 sm:border border-border-log p-4 text-parchment"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-lg">Repousser</h2>
+          <button
+            onClick={onClose}
+            aria-label="Fermer"
+            className="text-muted hover:text-parchment text-sm"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p className="text-sm text-muted mb-3 truncate">{r.title}</p>
+
+        <label className="block text-xs text-muted mb-1">Nouvelle échéance</label>
+        <input
+          type="datetime-local"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="block w-full min-w-0 max-w-full rounded border border-border-log bg-ink px-2 py-1.5 text-sm outline-none focus:border-brass"
+        />
+
+        {error && <p className="text-xs text-rust mt-2">{error}</p>}
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded border border-border-log text-muted px-3 py-2 text-sm"
+          >
+            Annuler
+          </button>
+          <button
+            onClick={submit}
+            disabled={saving || !value}
+            className="flex-1 rounded bg-brass text-ink px-3 py-2 text-sm font-medium disabled:opacity-50 flex items-center justify-center"
+          >
+            {saving ? <Spinner /> : "Reporter"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

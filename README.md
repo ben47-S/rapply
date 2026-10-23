@@ -33,7 +33,7 @@
 
 ### 🔔 Notifications Push Web
 - Notifications push natives via Web Push API et Service Worker (`public/sw.js`).
-- Déclenchement automatique par un planificateur interne au serveur : rappels toutes les 3 min, résumé du matin à 7 h UTC (les routes `/api/push/send` et `/api/push/digest` restent appelables avec `CRON_SECRET`).
+- Déclenchement automatique par un planificateur interne au serveur : rappels toutes les 3 min (paliers d'anticipation + relance toutes les 12 h des rappels en retard non cochés), résumé du matin à 7 h UTC (les routes `/api/push/send` et `/api/push/digest` restent appelables avec `CRON_SECRET`).
 
 ---
 
