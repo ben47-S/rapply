@@ -1,4 +1,4 @@
-import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import { ConnectionBubble } from "@/app/components/ConnectionBubble";
 import { InitialLoading } from "@/app/components/InitialLoading";
 import "./globals.css";
@@ -30,21 +30,33 @@ export const viewport = {
   viewportFit: "cover",
 };
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
+const fraunces = localFont({
+  src: [
+    { path: "./fonts/fraunces-400.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/fraunces-600.ttf", weight: "600", style: "normal" },
+  ],
   variable: "--font-fraunces",
-  weight: ["400", "600"],
+  display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
+const plexMono = localFont({
+  src: [
+    { path: "./fonts/ibm-plex-mono-400.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/ibm-plex-mono-500.ttf", weight: "500", style: "normal" },
+  ],
   variable: "--font-plex-mono",
-  weight: ["400", "500"],
+  display: "swap",
 });
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: [
+    { path: "./fonts/inter-400.ttf", weight: "400", style: "normal" },
+    { path: "./fonts/inter-500.ttf", weight: "500", style: "normal" },
+    { path: "./fonts/inter-600.ttf", weight: "600", style: "normal" },
+    { path: "./fonts/inter-700.ttf", weight: "700", style: "normal" },
+  ],
   variable: "--font-inter",
+  display: "swap",
 });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
